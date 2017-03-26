@@ -1,0 +1,34 @@
+name:                  folderol
+version:               0.0.1
+license:               AllRightsReserved
+author:                Amos Robinson <amos.robinson@gmail.com>
+maintainer:            Amos Robinson <amos.robinson@gmail.com>
+copyright:             (c) 2016 Amos Robinson
+synopsis:              Fusion with processes
+category:              ?
+cabal-version:         >= 1.8
+build-type:            Simple
+description:           
+
+library
+  build-depends:
+                       ambiata-p
+                     , base
+                     , containers
+                     , template-haskell
+                     , wl-pprint-annotated
+
+  ghc-options:         -Wall -O2
+
+  hs-source-dirs: src
+
+  exposed-modules:
+                    Folderol.Process.Map
+
+                    Folderol.Untyped.Codegen
+                    Folderol.Untyped.Name
+                    Folderol.Untyped.Network
+                    Folderol.Untyped.Process
+                    Folderol.Untyped.Stream
+
+                    Folderol.Pretty
