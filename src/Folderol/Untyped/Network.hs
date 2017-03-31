@@ -7,7 +7,7 @@ import Folderol.Untyped.Name
 import Folderol.Untyped.Process
 import Folderol.Untyped.Stream
 
-import qualified Folderol.Pretty as Pretty
+import qualified Folderol.Internal.Pretty as Pretty
 
 import P
 
@@ -17,38 +17,40 @@ import qualified Data.Map as Map
 import qualified Language.Haskell.TH as Haskell
 import qualified Language.Haskell.TH.Syntax as Haskell
 
-data Network
- = Network
+data NetworkGraph
+ = NetworkGraph
  { nSources   :: Map Channel Source
  , nSinks     :: Map Channel Sink
  , nProcesses :: [Process]
  }
 
-newtype NetworkM a
- = NetworkM
- { runNetworkM :: Haskell.Q (Network, a) }
+newtype Network a
+ = Network
+ { getNetwork :: Haskell.Q (NetworkGraph, a) }
 
 
-emptyNetwork :: Network
-emptyNetwork = Network Map.empty Map.empty []
+emptyNetwork :: NetworkGraph
+emptyNetwork = NetworkGraph Map.empty Map.empty []
 
-joinNetworks :: Network -> Network -> Haskell.Q Network
-joinNetworks (Network i o p) (Network i' o' p')
+joinNetworks :: NetworkGraph -> NetworkGraph -> Haskell.Q NetworkGraph
+joinNetworks (NetworkGraph i o p) (NetworkGraph i' o' p')
  = do let i'' = i <> i'
-      o'' <- unionWithM joinSinks o o'
+      -- o'' <- unionWithM (\a b -> [||mappend a b||]) o o'
+      let o'' = o <> o'
       let p'' = p <> p'
-      return $ Network i'' o'' p''
+      return $ NetworkGraph i'' o'' p''
 
 
+{-
 unionWithM :: (Monad m, Ord k) => (v -> v -> m v) -> Map k v -> Map k v -> m (Map k v)
 unionWithM f l r
  = do let both = Map.intersectionWith (,) l r
       both' <- mapM (uncurry f) both
       return $ Map.unions [both', l, r]
+-}
 
-
-instance Pretty.Pretty Network where
- pretty (Network sources sinks procs)
+instance Pretty.Pretty NetworkGraph where
+ pretty (NetworkGraph sources sinks procs)
   = Pretty.vsep
   [ "network" 
   , Pretty.indent 2 "sources: "
@@ -59,31 +61,31 @@ instance Pretty.Pretty Network where
   ]
 
 
-instance Functor NetworkM where
+instance Functor Network where
  fmap f m
-  = NetworkM $ 
-  do  (n, a) <- runNetworkM m
+  = Network $ 
+  do  (n, a) <- getNetwork m
       return (n, f a)
 
-instance Applicative NetworkM where
- pure a = NetworkM $ return (emptyNetwork, a)
- (<*>) u v = NetworkM $
-  do  (n1, f) <- runNetworkM u
-      (n2, a) <- runNetworkM v
+instance Applicative Network where
+ pure a = Network $ return (emptyNetwork, a)
+ (<*>) u v = Network $
+  do  (n1, f) <- getNetwork u
+      (n2, a) <- getNetwork v
       (,) <$> joinNetworks n1 n2 <*> pure (f a)
 
-instance Monad NetworkM where
- (>>=) u v = NetworkM $
-  do  (n1, a) <- runNetworkM  u
-      (n2, b) <- runNetworkM (v a)
+instance Monad Network where
+ (>>=) u v = Network $
+  do  (n1, a) <- getNetwork  u
+      (n2, b) <- getNetwork (v a)
       (,) <$> joinNetworks n1 n2 <*> pure b
 
-liftQ :: Haskell.Q a -> NetworkM a
-liftQ f = NetworkM $ (,) emptyNetwork <$> f
+liftQ :: Haskell.Q a -> Network a
+liftQ f = Network $ (,) emptyNetwork <$> f
 
-runNetwork :: Haskell.Quasi m => NetworkM a -> m (Network, a)
-runNetwork = Haskell.runQ . runNetworkM
+getNetworkQ :: Haskell.Quasi m => Network a -> m (NetworkGraph, a)
+getNetworkQ = Haskell.runQ . getNetwork
 
-tell :: Network -> NetworkM ()
-tell n = NetworkM $ return (n, ())
+tell :: NetworkGraph -> Network ()
+tell n = Network $ return (n, ())
 

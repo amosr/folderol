@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
-module Folderol.Pretty
+module Folderol.Internal.Pretty
  ( module Pretty
  , set
  , mapEq
@@ -15,8 +15,7 @@ import qualified Data.Map as Map
 import Data.Set (Set)
 import qualified Data.Set as Set
 
-import Text.PrettyPrint.Annotated.WL
-import qualified Text.PrettyPrint.Annotated.WL as Pretty
+import Text.PrettyPrint.Annotated.WL as Pretty
 
 set :: Pretty a => Set a -> Doc b
 set

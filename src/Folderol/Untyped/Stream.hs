@@ -1,34 +1,25 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ExistentialQuantification #-}
 module Folderol.Untyped.Stream where
 
-import Folderol.Untyped.Name
-import qualified Folderol.Pretty as Pretty
+import qualified Folderol.Source as Source
+import qualified Folderol.Sink   as Sink
 
-import P
-
-import qualified Language.Haskell.TH as Haskell
+import qualified Folderol.Internal.Pretty as Pretty
+import qualified Folderol.Internal.Haskell as Haskell
 
 data Source
- = Source
- { sourcePull   :: Exp -- m (Maybe a)
- -- , sourceClose  :: Exp -- m ()
- }
+ = forall m a
+ . Source { unSource :: Haskell.TExp (Source.Source m a) }
 
 data Sink
- = Sink
- { sinkPush     :: Exp -- a -> m ()
- -- , sinkClose    :: Exp -- m ()
- }
-
-joinSinks :: Sink -> Sink -> Haskell.Q Sink
-joinSinks (Sink a) (Sink b)
- = Sink . Exp <$> [| \i -> $(return $ unExp $ a) i >> $(return $ unExp $ b) i |]
-
+ = forall m a
+ . Sink { unSink :: Haskell.TExp (Sink.Sink m a) }
 
 instance Pretty.Pretty Source where
- pretty = Pretty.pretty . sourcePull
+ pretty (Source s) = Pretty.pretty s
 
 instance Pretty.Pretty Sink where
- pretty = Pretty.pretty . sinkPush
+ pretty (Sink s) = Pretty.pretty s
 

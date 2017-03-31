@@ -33,7 +33,9 @@ nameOfVar = \case
     -> unChannel n
 -}
 
+{-
 newtype Exp = Exp { unExp :: Haskell.Exp }
+-}
 
 {-
 data ChannelT
@@ -59,8 +61,10 @@ instance Pretty.Pretty Label where
 instance Pretty.Pretty Var where
  pretty = Pretty.text . show . unVar
 
+{-
 instance Pretty.Pretty Exp where
  pretty = Pretty.text . show . unExp
+-}
 
 {-
 instance Pretty.Pretty ChannelT where

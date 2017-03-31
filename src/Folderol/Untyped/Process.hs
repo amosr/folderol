@@ -10,8 +10,10 @@ import P
 import Data.Map (Map)
 import Data.Set (Set)
 
-import qualified Folderol.Pretty as Pretty
-import Folderol.Pretty (pretty, (<+>), (<#>))
+import qualified Folderol.Internal.Pretty as Pretty
+import Folderol.Internal.Pretty (pretty, (<+>), (<#>))
+
+import qualified Folderol.Internal.Haskell as Haskell
 
 data Process
  = Process
@@ -29,16 +31,16 @@ data Info
 
 data Instruction
  = I'Pull Channel Var Next Next
- | I'Push Channel Exp Next
+ | I'Push Channel Haskell.Exp Next
  | I'Jump Next
- | I'Bool Exp Next Next
+ | I'Bool Haskell.Exp Next Next
  | I'Drop Channel Next
  | I'Done
 
 data Next
  = Next
  { nextLabel    :: Label
- , nextUpdates  :: Map Var Exp
+ , nextUpdates  :: Map Var Haskell.Exp
  }
 
 
