@@ -4,13 +4,14 @@ module Folderol.Process.Map where
 
 import Folderol.Typed
 import Folderol.Untyped.Process
--- import Folderol.Untyped.Codegen
+import Folderol.Untyped.Codegen
 -- import qualified Folderol.Untyped.Stream as U
 import qualified Folderol.Untyped.Name as U
 -- import qualified Folderol.Untyped.Network as U
 
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
+import Folderol.Spawn
 
 import P
 
@@ -41,11 +42,11 @@ map_p f is os
   next l = Next l Map.empty
   info i = Info Set.empty i
 
-map :: Haskell.TExpQ (a -> b) -> Channel a -> Network m (Channel b)
+map :: Monad m => Haskell.TExpQ (a -> b) -> Channel a -> Network m (Channel b)
 map f as = process1 $ map_p f as
 
 
-eg :: Haskell.TExpQ (Source.Source m Int) -> Haskell.TExpQ (Sink.Sink m Int) -> Network m ()
+eg :: Monad m => Haskell.TExpQ (Source.Source m Int) -> Haskell.TExpQ (Sink.Sink m Int) -> Network m ()
 eg src snk
  = do xs <- source src
       ys <- map [||(+1)||] xs
@@ -53,7 +54,7 @@ eg src snk
       sink zs snk
       return ()
 
-sourceRepeat :: Monad m => Maybe a -> Source.Source m a
+sourceRepeat :: Maybe a -> Source.Source IO a
 sourceRepeat a
  = Source.Source 
  { Source.init = return ()
@@ -74,4 +75,15 @@ run :: IO ()
 run = do
   (x,_) <- getNetwork $ eg [||sourceRepeat $ Just 1||] [||sinkPrint||]
   putStrLn $ show $ Pretty.pretty x
+  x' <- Haskell.runQ $ genNetwork x
+  putStrLn $ show $ Haskell.ppr $ Haskell.unType x'
+
+gen :: Spawn m => Network m () -> Haskell.TExpQ (m ())
+gen nett
+ = do
+  (x,_) <- getNetwork nett
+  x' <- Haskell.runQ $ genNetwork x
+  Haskell.runIO $ putStrLn $ show $ Haskell.ppr $ Haskell.unType x'
+  Haskell.runIO $ putStrLn $ show $ Haskell.unType x'
+  return x'
 

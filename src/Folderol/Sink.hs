@@ -12,11 +12,36 @@ data Sink m a
  , done :: s -> m ()
  }
 
+{-
+data Sink m a
+ = Sink
+ { init :: m ()
+ , push :: () -> a -> m ()
+ , done :: () -> m ()
+ }
+-}
+
 instance Monad m => Monoid (Sink m a) where
  mempty = Sink
   { init = return ()
   , push = \() _ -> return ()
   , done = \()   -> return () }
+
+{-
+ mappend (Sink init0 push0 done0) (Sink init1 push1 done1) = Sink
+  { init = do
+      s0 <- init0
+      s1 <- init1
+      return ()
+  , push = \() a -> do
+      s0' <- push0 () a
+      s1' <- push1 () a
+      return ()
+  , done = \() -> do
+      done0 ()
+      done1 ()
+  }
+-}
 
  mappend (Sink init0 push0 done0) (Sink init1 push1 done1) = Sink
   { init = do
@@ -31,4 +56,3 @@ instance Monad m => Monoid (Sink m a) where
       done0 s0
       done1 s1
   }
-

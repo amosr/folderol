@@ -23,7 +23,20 @@ library
   hs-source-dirs: src
 
   exposed-modules:
+                    Folderol.Internal.Pretty
+                    Folderol.Internal.Haskell
+
                     Folderol.Process.Map
+                    Folderol.Process.Map2
+
+                    Folderol.Sink
+                    Folderol.Source
+                    Folderol.Spawn
+
+                    Folderol.Typed
+                    Folderol.Typed.Name
+                    Folderol.Typed.Network
+                    Folderol.Typed.Process
 
                     Folderol.Untyped.Codegen
                     Folderol.Untyped.Name
@@ -31,4 +44,3 @@ library
                     Folderol.Untyped.Process
                     Folderol.Untyped.Stream
 
-                    Folderol.Pretty
