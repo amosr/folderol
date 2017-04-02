@@ -1,4 +1,7 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternGuards #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Folderol.Internal.Haskell
  ( module Haskell
@@ -17,8 +20,23 @@ type TExpQ a = Haskell.Q (Haskell.TExp a)
 -- Orphans: too bad.
 instance Pretty Haskell.Exp where
  -- Show instead of using TH's pretty: it seems to use the wrong variable names, and it's not all that pretty anyway.
- pretty = text . show
+ pretty = text . show . Haskell.ppr
+
+{-
+instance Pretty Haskell.Name where
+ pretty x 
+  | isPrefixOf "GHC." qualified
+  , unqualified /= ""
+  = text unqualified
+  | qualified == "GHC.Base.."
+  = "."
+  | otherwise
+  = text qualified
+  where 
+   qualified = show x
+   unqualified = reverse $ takeWhile (/='.') $ reverse qualified
+-}
 
 instance Pretty (Haskell.TExp a) where
- pretty = text . show . unType
+ pretty = pretty . unType
 

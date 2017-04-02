@@ -8,14 +8,12 @@ import Folderol.Untyped.Process
 import Folderol.Untyped.Stream
 
 import qualified Folderol.Internal.Pretty as Pretty
+import qualified Folderol.Internal.Haskell as Haskell
 
 import P
 
 import Data.Map (Map)
 import qualified Data.Map as Map
-
-import qualified Language.Haskell.TH as Haskell
-import qualified Language.Haskell.TH.Syntax as Haskell
 
 data NetworkGraph m
  = NetworkGraph
@@ -34,10 +32,20 @@ emptyNetwork = NetworkGraph Map.empty Map.empty []
 
 joinNetworks :: Monad m => NetworkGraph m -> NetworkGraph m -> Haskell.Q (NetworkGraph m)
 joinNetworks (NetworkGraph i o p) (NetworkGraph i' o' p')
- = do let i'' = i <> i'
+ = do i'' <- unionWithM dieDuplicateSource i i'
       o'' <- unionWithM unsafeSinkMappend o o'
       let p'' = p <> p'
       return $ NetworkGraph i'' o'' p''
+ where
+  dieDuplicateSource c s1 s2
+   = fail
+   $  "Internal error: channel with multiple sources, should only have one. This should not be possible using the 'source' function.\n"
+   <> show (Pretty.pretty c)
+   <> "\n"
+   <> show (Pretty.pretty s1)
+   <> "\n"
+   <> show (Pretty.pretty s2)
+
 
 
 unionWithM :: (Monad m, Ord k) => (k -> v -> v -> m v) -> Map k v -> Map k v -> m (Map k v)
@@ -58,6 +66,19 @@ instance Pretty.Pretty (NetworkGraph m) where
   , Pretty.indent 2 $ Pretty.vsep $ fmap Pretty.pretty procs
   ]
 
+prettyNetworkSummary :: NetworkGraph m -> Pretty.Doc b
+prettyNetworkSummary (NetworkGraph sources sinks procs)
+ = Pretty.vsep
+ [ prettyKV "  <-<-<-  " $ Map.toList sources
+ , prettyKV " =proc=  " $ fmap prettyProc procs
+ , prettyKV " ->->->  " $ Map.toList sinks
+ ]
+ where
+  prettyKV typ
+   = Pretty.vsep
+   . fmap (\(k,v) -> Pretty.pretty k <> typ <> Pretty.pretty v)
+  prettyProc p
+   = (Pretty.set (pOutputs p), Pretty.text (pName p) <> " " <> Pretty.set (pInputs p))
 
 instance Functor (Network m) where
  fmap f m

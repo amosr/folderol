@@ -24,6 +24,13 @@ data ProcessInfo
  | Output U.Channel
  | Instr U.Label U.Info 
 
+-- If we create some sort of Process monad, and make this something like:
+-- > input :: Channel a -> Process (Input a)
+-- then we can duplicate the inputs as necessary here.
+-- We would keep track of the channels we've already used as input, and if 
+-- the one we are adding has already been used, we insert a dup and replace
+-- both occurrences with the new ones.
+--
 input :: Channel a -> ProcessInfo
 input = Input . unChannel
 
@@ -34,7 +41,7 @@ output = Output . unChannel
 process' :: Freshly f (U.Next, [ProcessInfo]) => f -> Haskell.Q U.Process
 process' info
  = do (init,pis) :: (U.Next, [ProcessInfo]) <- freshly info
-      let p0 = U.Process Set.empty Set.empty init Map.empty
+      let p0 = U.Process "???" Set.empty Set.empty init Map.empty
       return $ foldl processOfProcessInfo p0 pis
 
 
@@ -49,7 +56,7 @@ processOfProcessInfo p pinfo
 map :: Haskell.Q (Haskell.TExp (a -> b)) -> Channel a -> Network () (Channel b)
 map f is
  = proc $ do
-      input is
+      in1 <- input is
       out <- output
 
       (lbl0,lbl1,lbl2,lbl3) <- labels
@@ -57,4 +64,6 @@ map f is
       lbl1 := \x -> push out [||f' x||] lbl2
       lbl2 := drop is lbl0
       lbl3 := done
+
+      return out
 -}

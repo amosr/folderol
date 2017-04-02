@@ -27,7 +27,6 @@ import qualified Folderol.Sink as Sink
 import P
 
 import qualified Data.Map as Map
-import Data.Typeable
 
 import qualified Folderol.Internal.Haskell as Haskell
 
@@ -50,11 +49,19 @@ source src = do
   chanU <- U.Channel <$> (liftQ $ Haskell.newName "source")
   let chan    = UnsafeChannel chanU
 
+  -- TODO: insert a dummy read/write process here to simplify duplication nodes,
+  -- TODO: as well as draining from source to sink. this does not work at the moment:
+  --
+  -- > x <- source SRC
+  -- > sink x SNK
+  --
+  -- because there is no process to drain, and no process pushing to x.
+  -- Starting to think having Source/Sink separate is a bad idea, and these should just be normal processes
   U.tell $ U.NetworkGraph (Map.singleton (unChannel chan) srcU) Map.empty []
 
   return chan
 
-sink :: (Monad m, Typeable a) => Channel a -> Haskell.TExpQ (Sink.Sink m a) -> U.Network m ()
+sink :: Monad m => Channel a -> Haskell.TExpQ (Sink.Sink m a) -> U.Network m ()
 sink chan snk = do
   snkU <- U.Sink <$> liftQ snk
   let chanU = unChannel chan

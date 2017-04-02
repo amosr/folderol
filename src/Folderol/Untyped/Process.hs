@@ -17,7 +17,8 @@ import qualified Folderol.Internal.Haskell as Haskell
 
 data Process
  = Process
- { pInputs        :: Set Channel
+ { pName          :: [Char]
+ , pInputs        :: Set Channel
  , pOutputs       :: Set Channel
  , pInitial       :: Next
  , pInstructions  :: Map Label Info
@@ -45,8 +46,8 @@ data Next
 
 
 instance Pretty.Pretty Process where
- pretty (Process ins outs label instrs)
-  = "process: " <#> 
+ pretty (Process name ins outs label instrs)
+  = "process " <> Pretty.text name <#> 
   ( Pretty.indent 2
   $ Pretty.vsep
   [ "inputs:  " <> Pretty.set ins
