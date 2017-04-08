@@ -25,6 +25,8 @@ import qualified Data.Set as Set
 
 import qualified Folderol.Internal.Haskell as Haskell
 
+import GHC.Types (SPEC(..))
+
 -- | Generate code for a network - error if there is more than one process!
 genNetwork1 :: Monad m => NetworkGraph m -> Haskell.TExpQ (m ())
 genNetwork1 graph
@@ -131,7 +133,7 @@ stateName c = chanName c "state"
 
 genNext :: Map Channel (Source m) -> Map Channel (Sink m) -> Next -> Haskell.ExpQ
 genNext srcs snks (Next ll bs)
-  = return $ foldl Haskell.AppE (Haskell.VarE $ unLabel ll) args
+  = return $ foldl Haskell.AppE (Haskell.VarE $ unLabel ll) (Haskell.ConE 'SPEC : args)
  where
   args = fmap st' (Map.keys srcs) <> fmap st' (Map.keys snks) <> fmap snd (Map.toList bs)
   st' = Haskell.VarE . stateName
@@ -139,11 +141,12 @@ genNext srcs snks (Next ll bs)
 genInstruction :: Map Channel (Source m) -> Map Channel (Sink m) -> (Label, Info) -> Haskell.DecQ
 genInstruction sources sinks (l, info)
  = do body <- bodyQ $ infoInstruction info
-      let clause = Haskell.Clause (bindsSt <> binds) (Haskell.NormalB body) []
+      let clause = Haskell.Clause (bindsSpec <> bindsSt <> binds) (Haskell.NormalB body) []
       return $ Haskell.FunD l' [clause]
  where
   l'    = unLabel l
 
+  bindsSpec = [Haskell.ConP 'SPEC []]
   bindsSt = fmap (Haskell.VarP . stateName) (Map.keys sources) <> fmap (Haskell.VarP . stateName) (Map.keys sinks)
   binds = fmap (Haskell.VarP . unVar)
         $ Set.toList

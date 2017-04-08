@@ -10,6 +10,7 @@ import qualified Folderol.Untyped.Name as U
 import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Transform.InsertDups as U
 import qualified Folderol.Untyped.Transform.CullOutputs as U
+import qualified Folderol.Untyped.Transform.Fusion as U
 
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
@@ -25,6 +26,8 @@ import qualified Folderol.Internal.Pretty as Pretty
 import System.IO (IO, putStrLn)
 
 import Control.Concurrent.QSem
+
+-- import GHC.Stack
 
 map_p :: Haskell.Q (Haskell.TExp (a -> b)) -> Channel a -> Channel b -> Haskell.Q Process
 map_p f is os
@@ -46,8 +49,11 @@ map_p f is os
   next l = Next l Map.empty
   info i = Info Set.empty i
 
-map :: Monad m => Haskell.TExpQ (a -> b) -> Channel a -> Network m (Channel b)
+map :: (Monad m) => Haskell.TExpQ (a -> b) -> Channel a -> Network m (Channel b)
 map f as = process1 $ map_p f as
+
+map2 :: Monad m => Haskell.TExpQ (a -> b) -> Haskell.TExpQ (b -> c) -> Channel a -> Network m (Channel c)
+map2 f g = map f >=> map g
 
 
 sourceRepeat :: Maybe a -> Source.Source IO a
@@ -76,11 +82,15 @@ sinkPrint prefix
  , Sink.done = \() -> return ()
  }
 
+{-# INLINE sinkPrintLock #-}
 sinkPrintLock :: Show a => IO ([Char] -> Sink.Sink IO a)
 sinkPrintLock 
  = do sem <- newQSem 1
-      return $ \prefix ->
-        Sink.Sink 
+      return (sinkz sem)
+ where
+  {-# INLINE sinkz #-}
+  sinkz sem prefix
+   =    Sink.Sink 
         { Sink.init = return sem
         , Sink.push = \s v -> do
             waitQSem s
@@ -108,7 +118,16 @@ gen nett
   Haskell.runIO $ putStrLn "CullOutputs"
   Haskell.runIO $ putStrLn $ show $ U.prettyNetworkSummary graph2
 
-  code <- Haskell.runQ $ genNetwork graph2
+  graph3 <- U.fuseNetwork graph2
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn "FuseNetwork"
+  Haskell.runIO $ putStrLn $ show $ U.prettyNetworkSummary graph3
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn $ show $ Pretty.pretty graph3
+
+
+  code <- Haskell.runQ $ genNetwork graph3
   -- Haskell.runIO $ putStrLn $ show $ Haskell.ppr $ Haskell.unType code
   -- Haskell.runIO $ putStrLn $ show $ Haskell.unType code
   return code

@@ -3,7 +3,7 @@ version:               0.0.1
 license:               AllRightsReserved
 author:                Amos Robinson <amos.robinson@gmail.com>
 maintainer:            Amos Robinson <amos.robinson@gmail.com>
-copyright:             (c) 2016 Amos Robinson
+copyright:             (c) 2017 Amos Robinson
 synopsis:              Fusion with processes
 category:              ?
 cabal-version:         >= 1.8
@@ -13,10 +13,13 @@ description:
 library
   build-depends:
                        ambiata-p
+                     , ambiata-x-eithert
                      , base
                      , containers
                      , template-haskell
+                     , transformers
                      , wl-pprint-annotated
+                     , ghc-prim
 
   ghc-options:         -Wall -O2
 
@@ -45,4 +48,5 @@ library
                     Folderol.Untyped.Stream
                     Folderol.Untyped.Transform.CullOutputs
                     Folderol.Untyped.Transform.InsertDups
+                    Folderol.Untyped.Transform.Fusion
 

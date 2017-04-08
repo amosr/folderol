@@ -44,6 +44,20 @@ data Next
  , nextUpdates  :: Map Var Haskell.Exp
  }
 
+outlabels :: Instruction -> [Label]
+outlabels = \case
+ I'Pull _ _ (Next l _) (Next l' _)
+  -> [l, l']
+ I'Push _ _ (Next l _)
+  -> [l]
+ I'Jump (Next l _) 
+  -> [l]
+ I'Bool _ (Next l _) (Next l' _) 
+  -> [l, l']
+ I'Drop _ (Next l _) 
+  -> [l]
+ I'Done 
+  -> []
 
 instance Pretty.Pretty Process where
  pretty (Process name ins outs label instrs)

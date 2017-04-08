@@ -21,6 +21,7 @@ instance Spawn IO where
   _ <- forkFinally a (\_ -> putMVar ref ())
   b
   takeMVar ref
+ {-# INLINE join2 #-}
 
  channel = do
   chan <- newChan
@@ -42,3 +43,4 @@ instance Spawn IO where
             }
 
   return (snk, src)
+ {-# INLINE channel #-}
