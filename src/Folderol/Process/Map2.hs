@@ -14,18 +14,16 @@ import System.IO (IO)
 
 runMapMap :: [Int] -> IO ()
 runMapMap xs0
- = do printer <- sinkPrintLock
-      $$(gen $ do
+ =    $$(gen $ do
          xs <- source [||sourceOfList xs0||]
 
          ys <- map [||(*1)||] xs
          zs <- map [||(*2)||] ys
 
-         -- ws <- map2 [||(+1)||] [||(*3)||] ys
+         ws <- map2 [||(+1)||] [||(*3)||] ys
 
-         -- sink ys [||printer "YS"||] 
-         sink zs [||printer "ZS"||] 
-         -- sink ws [||printer "WS"||] 
+         sink zs [||sinkPrint "ZS"||] 
+         sink ws [||sinkPrint "WS"||] 
 
          return ())
 

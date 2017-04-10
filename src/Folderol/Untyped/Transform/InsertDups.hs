@@ -36,7 +36,7 @@ insertDups graph = do
   procs' <- go [] $ nProcesses graph
   return $ graph { nProcesses = procs' }
  where
-  go acc [] = return acc
+  go acc [] = return $ reverse acc
   go acc (p1:ps) 
    -- Check if any later processes use the same input.
    -- Want to keep the proceses in more or less the same order, inserting the
@@ -50,7 +50,7 @@ insertDups graph = do
         let p1' = substChannelInput chan chan1 p1
         let p2' = substChannelInput chan chan2 p2 
         let processes = reverse acc <> [dupproc, p1'] <> before <> [p2'] <> after
-        go processes []
+        go [] processes
 
    -- Continue
    | otherwise

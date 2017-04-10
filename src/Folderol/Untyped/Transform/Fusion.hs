@@ -159,12 +159,30 @@ tryStepPair vars fml0 fl (Info pbinds pinstr) (Info qbinds qinstr)
  | otherwise
  = do (fml1,pinstr') <- tryStep id      vars fml0 fl pinstr (updatesOfBinds qbinds)
       (fml2,qinstr') <- tryStep swapper vars fml1 (swapper fl) qinstr (updatesOfBinds pbinds)
-      -- TODO: preferences
       case (pinstr', qinstr') of
        (Nothing, Nothing) -> EitherT.left $ Error'Fusion (CantFuse fl)
+       (Just (i1,outs1), Just (i2,outs2))
+        | (i,outs) <- preference i1 outs1 i2 outs2
+        -> return (fml2, i, outs)
        (Just (i,outs), _) -> return (fml2, i, outs)
        (_, Just (i,outs)) -> return (fml2, i, outs)
  where
+  preference i1 outs1 i2 outs2
+   | I'Done <- pinstr
+   = (i2, outs2)
+   | I'Done <- qinstr
+   = (i1, outs1)
+   | I'Jump{} <- i1
+   = (i1, outs1)
+   | I'Jump{} <- i2
+   = (i2, outs2)
+   | I'Pull{} <- i2
+   = (i1, outs1)
+   | I'Pull{} <- i1
+   = (i2, outs2)
+   | otherwise
+   = (i1, outs1)
+
   swapper (FuseLabel flp flq fis) = FuseLabel flq flp fis
 
   updatesOfBinds
@@ -216,7 +234,7 @@ tryStep swapper vars fml0 fl instruction otherUpdates
           -- TODO: don't duplicate expression
           let m = Map.insert buf e
                 $ nextUpdates n
-          (fml1,fl',n') <- mkNext fml0 (nextLabel n) (isPQ fl) m
+          (fml1,fl',n') <- mkNext fml0 (nextLabel n) (Map.insert c IS'Have $ isPQ fl) m
           return (fml1, Just (I'Push c e n', [fl']))
 
         Just IS'Have -> return (fml0, Nothing)
@@ -277,7 +295,6 @@ insertFuseLabel fml fl
  | Just l <- Map.lookup fl fml
  = return (fml, l)
  | otherwise
- = do nn <- lift $ Haskell.newName "fuse"
-      l' <- Label <$> lift (Haskell.newName (show nn))
+ = do l' <- Label <$> lift (Haskell.newName "fuse")
       return (Map.insert fl l' fml, l')
 
