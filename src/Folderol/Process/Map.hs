@@ -11,6 +11,7 @@ import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Transform.InsertDups as U
 import qualified Folderol.Untyped.Transform.CullOutputs as U
 import qualified Folderol.Untyped.Transform.Fusion as U
+import qualified Folderol.Untyped.Transform.Minimise as U
 
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
@@ -74,6 +75,7 @@ sourceOfList as0
  , Source.done = \_  -> return ()
  }
 
+{-# INLINE sinkPrint #-}
 sinkPrint :: Show a => [Char] -> Sink.Sink IO a
 sinkPrint prefix
  = Sink.Sink 
@@ -126,8 +128,22 @@ gen nett
   Haskell.runIO $ putStrLn ""
   Haskell.runIO $ putStrLn $ show $ Pretty.pretty graph3
 
+  graph4 <- return $ U.cullOutputs graph3
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn "CullOutputs"
+  Haskell.runIO $ putStrLn $ show $ U.prettyNetworkSummary graph4
 
-  code <- Haskell.runQ $ genNetwork graph3
+  graph5 <- U.minimiseNetwork graph4
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn "Minimise"
+  Haskell.runIO $ putStrLn $ show $ U.prettyNetworkSummary graph5
+  Haskell.runIO $ putStrLn ""
+  Haskell.runIO $ putStrLn $ show $ Pretty.pretty graph5
+
+
+  code <- Haskell.runQ $ genNetwork graph5
   -- Haskell.runIO $ putStrLn $ show $ Haskell.ppr $ Haskell.unType code
   -- Haskell.runIO $ putStrLn $ show $ Haskell.unType code
   return code
