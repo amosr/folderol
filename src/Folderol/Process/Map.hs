@@ -3,10 +3,10 @@
 module Folderol.Process.Map where
 
 import Folderol.Typed
-import Folderol.Untyped.Process
+import qualified Folderol.Typed.Process as Proc
+-- import Folderol.Untyped.Process
 import Folderol.Untyped.Codegen
 -- import qualified Folderol.Untyped.Stream as U
-import qualified Folderol.Untyped.Name as U
 import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Transform.InsertDups as U
 import qualified Folderol.Untyped.Transform.CullOutputs as U
@@ -19,42 +19,93 @@ import Folderol.Spawn
 
 import P
 
-import qualified Data.Set as Set
-import qualified Data.Map as Map
-
 import qualified Folderol.Internal.Haskell as Haskell
 import qualified Folderol.Internal.Pretty as Pretty
 import System.IO (IO, putStrLn)
 
-import Control.Concurrent.QSem
-
--- import GHC.Stack
-
-map_p :: Haskell.Q (Haskell.TExp (a -> b)) -> Channel a -> Channel b -> Haskell.Q Process
-map_p f is os
- = freshly $ \lbl0 lbl1 lbl2 lbl3 v0 -> do
-      f0 <- f
-      let f' = Haskell.AppE (Haskell.unType f0) (Haskell.VarE $ U.unVar v0)
-
-      let is' = unChannel is
-      let os' = unChannel os
-
-      return $ Process ("map " <> show (Pretty.pretty f0)) (Set.singleton is') (Set.singleton os') (next lbl0)
-             $ Map.fromList
-             [(lbl0, info $ I'Pull is' v0   (next lbl1) (next lbl3))
-             ,(lbl1, Info (Set.singleton v0) (I'Push os' f' (next lbl2)))
-             ,(lbl2, info $ I'Drop is'    (next lbl0))
-
-             ,(lbl3, info $ I'Done)]
- where
-  next l = Next l Map.empty
-  info i = Info Set.empty i
 
 map :: (Monad m) => Haskell.TExpQ (a -> b) -> Channel a -> Network m (Channel b)
-map f as = process1 $ map_p f as
+map f as = Proc.proc "map" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
 
-map2 :: Monad m => Haskell.TExpQ (a -> b) -> Haskell.TExpQ (b -> c) -> Channel a -> Network m (Channel c)
-map2 f g = map f >=> map g
+  l0 <- Proc.label0
+  l1 <- Proc.label1
+  l2 <- Proc.label0
+  l3 <- Proc.label0
+
+  Proc.instr0 l0 $
+    Proc.pull i0 l1 l3
+
+  Proc.instr1 l1 $ \x ->
+    Proc.push o0 [||$$f $$x||] l2
+
+  Proc.instr0 l2 $
+    Proc.drop i0 l0
+
+  Proc.instr0 l3 $
+    Proc.done
+
+  return (l0, o0)
+
+
+filter :: (Monad m) => Haskell.TExpQ (a -> Bool) -> Channel a -> Network m (Channel a)
+filter f as = Proc.proc "filter" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
+
+  l0 <- Proc.label0
+  l1 <- Proc.label1
+  l2 <- Proc.label1
+  l3 <- Proc.label0
+  l4 <- Proc.label0
+
+  Proc.instr0 l0 $
+    Proc.pull i0 l1 l4
+
+  Proc.instr1 l1 $ \x ->
+    Proc.bool [||$$f $$x||] (l2 x) l3
+
+  Proc.instr1 l2 $ \x ->
+    Proc.push o0 x l3
+
+  Proc.instr0 l3 $
+    Proc.drop i0 l0
+
+  Proc.instr0 l4 $
+    Proc.done
+
+  return (l0, o0)
+
+unzip :: Monad m => Channel (a,b) -> Network m (Channel a, Channel b)
+unzip as = Proc.proc "filter" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
+  o1 <- Proc.output
+
+  l0 <- Proc.label0
+  l1 <- Proc.label1
+  l2 <- Proc.label1
+  l3 <- Proc.label0
+  l4 <- Proc.label0
+
+  Proc.instr0 l0 $
+    Proc.pull i0 l1 l4
+
+  Proc.instr1 l1 $ \x ->
+    Proc.push o0 [||fst $$x||] (l2 x)
+
+  Proc.instr1 l2 $ \x ->
+    Proc.push o1 [||snd $$x||] l3
+
+  Proc.instr0 l3 $
+    Proc.drop i0 l0
+
+  Proc.instr0 l4 $
+    Proc.done
+
+  return (l0, (o0, o1))
+
 
 
 sourceRepeat :: Maybe a -> Source.Source IO a
@@ -83,24 +134,6 @@ sinkPrint prefix
  , Sink.push = \() v -> putStrLn (prefix <> ": " <> show v)
  , Sink.done = \() -> return ()
  }
-
-{-# INLINE sinkPrintLock #-}
-sinkPrintLock :: Show a => IO ([Char] -> Sink.Sink IO a)
-sinkPrintLock 
- = do sem <- newQSem 1
-      return (sinkz sem)
- where
-  {-# INLINE sinkz #-}
-  sinkz sem prefix
-   =    Sink.Sink 
-        { Sink.init = return sem
-        , Sink.push = \s v -> do
-            waitQSem s
-            putStrLn (prefix <> ": " <> show v)
-            signalQSem s
-            return s
-        , Sink.done = \_ -> return ()
-        }
 
 
 

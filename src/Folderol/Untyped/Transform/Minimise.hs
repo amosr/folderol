@@ -12,6 +12,7 @@ import qualified Folderol.Internal.Haskell as Haskell
 
 import P
 
+import qualified Data.Set as Set
 import qualified Data.Map as Map
 
 minimiseNetwork :: NetworkGraph m -> Haskell.Q (NetworkGraph m)
@@ -25,10 +26,14 @@ minimiseProcess p =
       instrs = fmap go $ pInstructions p
   in  return $ removeUnreachable p { pInitial = init, pInstructions = instrs }
  where
-  get (Next l u) = case Map.lookup l (pInstructions p) of
+  get = get' Set.empty
+
+  get' seen (Next l u)
+   = case Map.lookup l (pInstructions p) of
     Just (Info _ (I'Jump (Next l' u')))
      | all justVar u'
-     -> get (Next l' $ fmap (substVars u) u')
+     , not $ Set.member l' seen
+     -> get' (Set.insert l' seen) (Next l' $ fmap (substVars u) u')
     _
      -> Next l u
 

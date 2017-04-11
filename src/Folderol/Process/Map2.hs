@@ -9,7 +9,7 @@ import Folderol.Typed
 -- import qualified Folderol.Sink as Sink
 -- import qualified Folderol.Spawn as Spawn
 
-import P
+import P hiding (filter)
 import System.IO (IO)
 
 runMapMap :: [Int] -> IO ()
@@ -17,12 +17,14 @@ runMapMap xs0
  =    $$(gen $ do
          xs <- source [||sourceOfList xs0||]
 
-         ys <- map [||(*1)||] xs
-         zs <- map [||(*2)||] ys
+         ys <- map [||(*2)||] xs
+         zs <- map [||\y -> (y,y)||] ys
+         (as,bs) <- unzip zs
 
-         ws <- map2 [||(+1)||] [||(*3)||] ys
+         ws <- filter [||(>0)||] ys
 
-         sink zs [||sinkPrint "ZS"||] 
+         sink as [||sinkPrint "AS"||] 
+         sink bs [||sinkPrint "BS"||] 
          sink ws [||sinkPrint "WS"||] 
 
          return ())
