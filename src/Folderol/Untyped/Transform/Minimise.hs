@@ -20,6 +20,7 @@ minimiseNetwork graph = do
   procs' <- mapM minimiseProcess $ nProcesses graph
   return $ graph { nProcesses = procs' }
 
+-- TODO: implement Hopcroft minimisation
 minimiseProcess :: Process -> Haskell.Q Process
 minimiseProcess p = 
   let init   = get $ pInitial p

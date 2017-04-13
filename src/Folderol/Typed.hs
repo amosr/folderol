@@ -9,5 +9,7 @@ module Folderol.Typed (
 
 import Folderol.Typed.Name as Typed
 import Folderol.Typed.Network as Typed
+
+-- Processes shouldn't be necessary most of the time..
 -- import Folderol.Typed.Process as Typed
 

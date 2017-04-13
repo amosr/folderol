@@ -26,12 +26,14 @@ library
   hs-source-dirs: src
 
   exposed-modules:
+                    Folderol
+
                     Folderol.Internal.Pretty
                     Folderol.Internal.Haskell
 
                     Folderol.Process.Map
-                    Folderol.Process.Map2
 
+                    Folderol.Splice
                     Folderol.Sink
                     Folderol.Source
                     Folderol.Spawn
@@ -46,8 +48,24 @@ library
                     Folderol.Untyped.Network
                     Folderol.Untyped.Process
                     Folderol.Untyped.Stream
+                    Folderol.Untyped.Transform
                     Folderol.Untyped.Transform.CullOutputs
                     Folderol.Untyped.Transform.InsertDups
                     Folderol.Untyped.Transform.Fusion
                     Folderol.Untyped.Transform.Minimise
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: test.hs
+  hs-source-dirs: test
+
+  build-depends:
+                       folderol
+                     , ambiata-p
+                     , ambiata-x-eithert
+                     , base
+                     , transformers
+                     , hedgehog == 0.1
+
+  ghc-options:         -Wall -O2
 

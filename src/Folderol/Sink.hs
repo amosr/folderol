@@ -4,6 +4,10 @@ module Folderol.Sink where
 
 import P
 
+import System.IO (IO, putStrLn)
+import Data.IORef
+
+
 data Sink m a
  = forall s
  . Sink
@@ -12,36 +16,29 @@ data Sink m a
  , done :: s -> m ()
  }
 
-{-
-data Sink m a
- = Sink
- { init :: m ()
- , push :: () -> a -> m ()
- , done :: () -> m ()
+{-# INLINE sinkPrint #-}
+sinkPrint :: Show a => [Char] -> Sink IO a
+sinkPrint prefix
+ = Sink 
+ { init = return ()
+ , push = \() v -> putStrLn (prefix <> ": " <> show v)
+ , done = \() -> return ()
  }
--}
+
+{-# INLINE listOfChannel #-}
+listOfChannel :: IORef [a] -> Sink IO a
+listOfChannel into
+ = Sink
+ { init = return []
+ , push = \xs x -> return (x : xs)
+ , done = \xs   -> writeIORef into (reverse xs)
+ }
 
 instance Monad m => Monoid (Sink m a) where
  mempty = Sink
   { init = return ()
   , push = \() _ -> return ()
   , done = \()   -> return () }
-
-{-
- mappend (Sink init0 push0 done0) (Sink init1 push1 done1) = Sink
-  { init = do
-      s0 <- init0
-      s1 <- init1
-      return ()
-  , push = \() a -> do
-      s0' <- push0 () a
-      s1' <- push1 () a
-      return ()
-  , done = \() -> do
-      done0 ()
-      done1 ()
-  }
--}
 
  mappend (Sink init0 push0 done0) (Sink init1 push1 done1) = Sink
   { init = do

@@ -190,7 +190,6 @@ tryStepPair vars fml0 fl (Info pbinds pinstr) (Info qbinds qinstr)
 
 tryStep :: (FuseLabel -> FuseLabel) -> Map Channel Var -> Map FuseLabel Label -> FuseLabel -> Instruction -> Map Var Haskell.Exp -> EitherT Error Haskell.Q (Map FuseLabel Label, Maybe (Instruction, [FuseLabel]))
 tryStep swapper vars fml0 fl instruction otherUpdates
- -- TODO: compute instruction
  = case instruction of
    I'Done
     -- TODO: these closes should be separate instructions

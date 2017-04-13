@@ -6,6 +6,7 @@ import Folderol.Typed.Name
 import Folderol.Typed.Network
 
 import qualified Folderol.Untyped.Name as U
+import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Process as U
 
 import P
@@ -56,22 +57,25 @@ instance Monad m => Monad (Process m) where
       a <- runProcess  u    name
       runProcess (v a) name
 
-
 proc :: Monad m => String -> Process m (LabelRef, a) -> Network m a
 proc name p = do
   ((init, r), pis) <- State.runStateT (runProcess p name) (ProcessInfo Map.empty Set.empty Map.empty)
   -- TODO: insert dups
-  i0 <- liftQ init
+  let overs = Map.filter ((>1) . length) (piInputs pis)
+  when (not $ Map.null overs) $
+    fail "Unsupported (yet): process consuming same stream multiple times, eg 'zip xs xs' or 'append xs xs'."
+
+  i0 <- U.liftQ init
   let p0 = U.Process name (Map.keysSet $ piInputs pis) (piOutputs pis) i0 (piInstructions pis)
-  process p0
+  U.tell $ U.NetworkGraph Map.empty Map.empty [p0]
   return r
 
 
 procQ :: Monad m => Haskell.Q a -> State.StateT s (Network m) a
-procQ m = lift (liftQ m)
+procQ m = lift (U.liftQ m)
 
 sfresh :: Monad m => String -> String -> State.StateT a (Network m) Haskell.Name
-sfresh pre name = lift $ liftQ $ Haskell.newName (pre <> "_" <> name)
+sfresh pre name = lift $ U.liftQ $ Haskell.newName (pre <> "_" <> name)
 
 input :: Monad m => Channel a -> Process m (Input a)
 input (UnsafeChannel u) = Process $ \name -> do

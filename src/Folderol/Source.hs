@@ -12,11 +12,21 @@ data Source m a
  , done :: s -> m ()
  }
 
-{-
-data Source m a
- = Source
- { init :: m ()
- , pull :: () -> m (Maybe a, ())
- , done :: () -> m ()
+sourceRepeat :: Monad m => Maybe a -> Source m a
+sourceRepeat a
+ = Source 
+ { init = return ()
+ , pull = \() -> return (a, ())
+ , done = \() -> return ()
  }
--}
+
+sourceOfList :: Monad m => [a] -> Source m a
+sourceOfList as0
+ = Source 
+ { init = return as0
+ , pull = \as -> case as of
+    []      -> return (Nothing, [])
+    (a:as') -> return (Just a, as')
+ , done = \_  -> return ()
+ }
+
