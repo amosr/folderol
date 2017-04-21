@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards #-}
+{-# LANGUAGE LambdaCase #-}
 module Folderol.Untyped.Transform.Fusion where
 
 import Folderol.Untyped.Name
@@ -40,16 +41,25 @@ fuseNetwork graph
  where
   go [] = return []
   go [p] = return [p]
-  go (p:ps)
-   = case findConnected p [] ps of
+  go (p:ps) = tryFuse p ps
+     >>= \case
       Nothing -> do
         ps' <- go ps
         return (p : ps')
-      Just (q,ps') -> do
-        f <- EitherT.runEitherT $ fusePair p q
-        case f of
-         Left err -> fail (show err)
-         Right p' -> go (p' : ps')
+      Just ps' -> do
+        go ps'
+
+  tryFuse p ps
+   = case findConnected p [] ps of
+      Nothing -> return Nothing
+      Just (q,ps') -> EitherT.runEitherT (fusePair p q)
+       >>= \case
+        Left (Error'Internal err) -> fail (show err)
+        Left (Error'Fusion _) -> tryFuse p ps'
+         >>= \case
+          Nothing -> return Nothing
+          Just ps'' -> return $ Just (q:ps'')
+        Right p' -> return $ Just (p' : ps')
 
   findConnected _ _ [] = Nothing
   findConnected p acc (q:ps)

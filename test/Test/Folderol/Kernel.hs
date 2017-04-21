@@ -4,9 +4,11 @@ module Test.Folderol.Kernel where
 
 -- Separate the kernels to make viewing Core easier
 import Test.Folderol.Kernel.Filter1
+import Test.Folderol.Kernel.FilterMap
 import Test.Folderol.Kernel.Map1
 import Test.Folderol.Kernel.Map2
 import Test.Folderol.Kernel.Map2Ignorant
+import Test.Folderol.Kernel.PartitionAppend
 import Test.Folderol.Kernel.Zip1
 import Test.Folderol.Kernel.ZipWith3
 
@@ -47,6 +49,29 @@ prop_filter1 = property $ do
   xs <- forAll genVec
   ys <- lift $ filter1 (>10) xs
   ys === Vector.filter (>10) xs
+
+prop_filterMap :: Property
+prop_filterMap = property $ do
+  xs <- forAll genVec
+  (trues,others) <- lift $ filterMap (>10) (*2) xs
+  trues  === Vector.filter (>10) xs
+  others === fmap (*2) xs
+
+
+prop_partitionAppend :: Property
+prop_partitionAppend = property $ do
+  xs <- forAll genVec
+  ys <- lift $ partitionAppend f xs
+  ys === go xs
+ where
+  f :: Int -> Bool
+  f = (>10)
+
+  go as
+   = let bs = Vector.filter f as
+         cs = Vector.filter (not . f) as
+         ds = bs <> cs
+     in  ds
 
 
 prop_zip1 :: Property

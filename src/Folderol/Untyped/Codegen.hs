@@ -52,9 +52,7 @@ genNetwork graph0
 
     -- It is a bit sneaky to have a source and a sink for same channel: each process must only uses sinks for outputs, and only uses sources for inputs
     g' <- joinNetworks g 
-        $ NetworkGraph { nSources   = Map.singleton c e'src
-                       , nSinks     = Map.singleton c e'snk
-                       , nProcesses = [] }
+        $ createNetwork (Map.singleton c e'src) (Map.singleton c e'snk) []
 
     Haskell.unsafeTExpCoerce (
       (Haskell.varE '(>>=) `Haskell.appE` (Haskell.varE 'Spawn.channel)) `Haskell.appE`

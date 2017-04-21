@@ -32,6 +32,7 @@ library
                     Folderol.Internal.Pretty
                     Folderol.Internal.Haskell
 
+                    Folderol.Process.Append
                     Folderol.Process.Map
                     Folderol.Process.Filter
                     Folderol.Process.Zip
@@ -51,6 +52,7 @@ library
                     Folderol.Untyped.Codegen
                     Folderol.Untyped.Name
                     Folderol.Untyped.Network
+                    Folderol.Untyped.NetworkSummary
                     Folderol.Untyped.Process
                     Folderol.Untyped.Stream
                     Folderol.Untyped.Transform

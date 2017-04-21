@@ -8,6 +8,7 @@ module Folderol.Typed.Network (
     U.Network
   , source
   , sink
+  , mapM_
   ) where
 
 import Folderol.Typed.Name
@@ -19,7 +20,7 @@ import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
 
-import P
+import P hiding (mapM_)
 
 import qualified Data.Map as Map
 
@@ -41,7 +42,7 @@ source src = do
   --
   -- because there is no process to drain, and no process pushing to x.
   -- Starting to think having Source/Sink separate is a bad idea, and these should just be normal processes
-  U.tell $ U.NetworkGraph (Map.singleton (unChannel chan) srcU) Map.empty []
+  U.tell $ U.createNetwork (Map.singleton (unChannel chan) srcU) Map.empty []
 
   return chan
 
@@ -49,5 +50,7 @@ sink :: Monad m => Channel a -> Haskell.TExpQ (Sink.Sink m a) -> U.Network m ()
 sink chan snk = do
   snkU <- U.Sink <$> U.liftQ snk
   let chanU = unChannel chan
-  U.tell $ U.NetworkGraph Map.empty (Map.singleton chanU snkU) []
+  U.tell $ U.createNetwork Map.empty (Map.singleton chanU snkU) []
 
+mapM_ :: Monad m => Haskell.TExpQ (a -> m ()) -> Channel a -> U.Network m ()
+mapM_ f chan = sink chan [|| Sink.perform $$f ||]

@@ -4,7 +4,7 @@ module Folderol.Sink where
 
 import P
 
-import System.IO (IO, putStrLn)
+import System.IO (IO)
 import Data.IORef
 
 import qualified Data.Vector as Vector
@@ -19,12 +19,12 @@ data Sink m a
  , done :: s -> m ()
  }
 
-{-# INLINE sinkPrint #-}
-sinkPrint :: Show a => [Char] -> Sink IO a
-sinkPrint prefix
+{-# INLINE perform #-}
+perform :: Monad m => (a -> m ()) -> Sink m a
+perform f
  = Sink 
  { init = return ()
- , push = \() v -> putStrLn (prefix <> ": " <> show v)
+ , push = \() v -> f v
  , done = \() -> return ()
  }
 

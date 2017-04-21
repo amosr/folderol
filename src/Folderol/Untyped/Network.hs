@@ -15,32 +15,44 @@ import P
 import Data.Map (Map)
 import qualified Data.Map as Map
 
+import qualified Data.Set as Set
+
 data NetworkGraph m
  = NetworkGraph
  { nSources   :: Map Channel (Source m)
  , nSinks     :: Map Channel (Sink m)
  , nProcesses :: [Process]
+ , nOriginalChannels :: [Channel]
+ -- ^ Hold the set of all channels ever used, in addition order.
+ -- This way we can give stable names as channels are added and removed
  }
 
 newtype Network m a
  = Network
  { getNetwork :: Haskell.Q (NetworkGraph m, a) }
 
+createNetwork :: Map Channel (Source m) -> Map Channel (Sink m) -> [Process] -> NetworkGraph m
+createNetwork sources sinks procs
+ = NetworkGraph sources sinks procs
+    (Map.keys sources <> Map.keys sinks <> Set.toList (Set.unions $ fmap pps procs))
+ where
+  pps p = pInputs p `Set.union` pOutputs p
 
 emptyNetwork :: NetworkGraph m
-emptyNetwork = NetworkGraph Map.empty Map.empty []
+emptyNetwork = NetworkGraph Map.empty Map.empty [] []
 
 joinNetworks :: Monad m => NetworkGraph m -> NetworkGraph m -> Haskell.Q (NetworkGraph m)
-joinNetworks (NetworkGraph i o p) (NetworkGraph i' o' p')
+joinNetworks (NetworkGraph i o p c) (NetworkGraph i' o' p' c')
  = do i'' <- unionWithM dieDuplicateSource i i'
       o'' <- unionWithM unsafeSinkMappend o o'
       let p'' = p <> p'
-      return $ NetworkGraph i'' o'' p''
+      let c'' = c <> filter (not . flip elem c) c'
+      return $ NetworkGraph i'' o'' p'' c''
  where
-  dieDuplicateSource c s1 s2
+  dieDuplicateSource chan s1 s2
    = fail
    $  "Internal error: channel with multiple sources, should only have one. This should not be possible using the 'source' function.\n"
-   <> show (Pretty.pretty c)
+   <> show (Pretty.pretty chan)
    <> "\n"
    <> show (Pretty.pretty s1)
    <> "\n"
@@ -56,7 +68,7 @@ unionWithM f l r
       return $ Map.unions [both', l, r]
 
 instance Pretty.Pretty (NetworkGraph m) where
- pretty (NetworkGraph sources sinks procs)
+ pretty (NetworkGraph sources sinks procs _)
   = Pretty.vsep
   [ "network" 
   , Pretty.indent 2 "sources: "
@@ -65,20 +77,6 @@ instance Pretty.Pretty (NetworkGraph m) where
   , Pretty.indent 4 $ Pretty.vsep $ Pretty.mapEq sinks
   , Pretty.indent 2 $ Pretty.vsep $ fmap Pretty.pretty procs
   ]
-
-prettyNetworkSummary :: NetworkGraph m -> Pretty.Doc b
-prettyNetworkSummary (NetworkGraph sources sinks procs)
- = Pretty.vsep
- [ prettyKV "  <-<-<-  " $ Map.toList sources
- , prettyKV " =proc=  " $ fmap prettyProc procs
- , prettyKV " ->->->  " $ Map.toList sinks
- ]
- where
-  prettyKV typ
-   = Pretty.vsep
-   . fmap (\(k,v) -> Pretty.pretty k <> typ <> Pretty.pretty v)
-  prettyProc p
-   = (Pretty.set (pOutputs p), Pretty.text (pName p) <> " " <> Pretty.set (pInputs p))
 
 instance Functor (Network m) where
  fmap f m

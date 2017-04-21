@@ -47,7 +47,7 @@ zipWith f as bs =
   zip as bs >>= map [|| \(a,b) -> $$f a b ||]
 
 unzip :: Monad m => Channel (a,b) -> Network m (Channel a, Channel b)
-unzip as = Proc.proc "filter" $ do
+unzip as = Proc.proc "unzip" $ do
   i0 <- Proc.input as
   o0 <- Proc.output
   o1 <- Proc.output

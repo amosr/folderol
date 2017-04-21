@@ -59,7 +59,7 @@ proc name p = do
 
   i0 <- U.liftQ init
   let p0 = U.Process name (Map.keysSet $ piInputs pis) (piOutputs pis) i0 (piInstructions pis)
-  U.tell $ U.NetworkGraph Map.empty Map.empty [p0]
+  U.tell $ U.createNetwork Map.empty Map.empty [p0]
   return r
 
 

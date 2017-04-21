@@ -33,11 +33,11 @@ import qualified Data.Set as Set
 --
 insertDups :: NetworkGraph m -> Haskell.Q (NetworkGraph m)
 insertDups graph = do
-  procs' <- go [] $ nProcesses graph
-  return $ graph { nProcesses = procs' }
+  (procs', chans') <- go [] [] $ nProcesses graph
+  return $ graph { nProcesses = procs', nOriginalChannels = nOriginalChannels graph <> chans' }
  where
-  go acc [] = return $ reverse acc
-  go acc (p1:ps) 
+  go acc chans [] = return (reverse acc, chans)
+  go acc chans (p1:ps) 
    -- Check if any later processes use the same input.
    -- Want to keep the proceses in more or less the same order, inserting the
    -- duplicator node just before p1.  This isn't too important, but it means
@@ -50,11 +50,11 @@ insertDups graph = do
         let p1' = substChannelInput chan chan1 p1
         let p2' = substChannelInput chan chan2 p2 
         let processes = reverse acc <> [dupproc, p1'] <> before <> [p2'] <> after
-        go [] processes
+        go [] (chan1 : chan2 : chans) processes
 
    -- Continue
    | otherwise
-   = go (p1:acc) ps
+   = go (p1:acc) chans ps
 
   -- Find a process that uses one of the same input channels,
   -- keeping its relative position in the process list
