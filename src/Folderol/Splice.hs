@@ -4,6 +4,7 @@ module Folderol.Splice
  ( fuse
  , fuseList_1_1
  , fuseVector_1_1
+ , fuseVector_2_1
  , U.FuseOptions(..)
  , U.defaultFuseOptions
  ) where
@@ -47,6 +48,18 @@ fuseVector_1_1 opts nett =
     $$(fuse opts $ do
       ins <- source [|| (Source.sourceOfVector invec) ||]
       outs <- nett ins
+      sink outs [||Sink.vectorOfChannel outref||])
+    readIORef outref)
+  ||]
+
+fuseVector_2_1 :: U.FuseOptions -> (Channel a -> Channel b -> U.Network IO (Channel c)) -> Haskell.TExpQ (Vector.Vector a -> Vector.Vector b -> IO (Vector.Vector c))
+fuseVector_2_1 opts nett =
+  [|| (\invec1 invec2 -> do
+    outref <- newIORef Vector.empty
+    $$(fuse opts $ do
+      in1 <- source [|| (Source.sourceOfVector invec1) ||]
+      in2 <- source [|| (Source.sourceOfVector invec2) ||]
+      outs <- nett in1 in2
       sink outs [||Sink.vectorOfChannel outref||])
     readIORef outref)
   ||]

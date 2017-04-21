@@ -1,61 +1,53 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Folderol.Typed.Process where
+module Folderol.Typed.Process (
+  proc
+ , input
+ , output
+
+ , pull
+ , push
+ , drop
+ , jump
+ , bool
+ , done
+
+ , label0
+ , label1
+ , label2
+ , label3
+ , label4
+ , label5
+
+ , instr0
+ , instr1
+ , instr2
+ , instr3
+ , instr4
+ , instr5
+
+ , Process
+ , Input
+ ) where
 
 import Folderol.Typed.Name
 import Folderol.Typed.Network
+import Folderol.Typed.Process.Internal
 
 import qualified Folderol.Untyped.Name as U
 import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Process as U
 
-import P
+import P hiding (drop, bool)
 
-import           Data.Map (Map)
 import qualified Data.Map as Map
-import           Data.Set (Set)
 import qualified Data.Set as Set
 
-import           Control.Monad.Trans.Class (MonadTrans(..))
 import qualified Control.Monad.Trans.State as State
 
 import qualified Folderol.Internal.Haskell as Haskell
 
 import Data.String (String)
-
-import qualified Prelude as Savage
-
-data ProcessInfo
- = ProcessInfo
- { piInputs       :: Map U.Channel [U.Channel]
- , piOutputs      :: Set U.Channel
- , piInstructions :: Map U.Label U.Info
- }
-
-data Input a
- = UnsafeInput { unInput :: U.Channel }
-
-newtype Process m a
- = Process
- { runProcess :: String -> State.StateT ProcessInfo (Network m) a }
-
-instance Monad m => Functor (Process m) where
- fmap f m
-  = Process $ \name -> do
-      a <- runProcess m name
-      return $ f a
-
-instance Monad m => Applicative (Process m) where
- pure a = Process $ \_ -> return a
- (<*>) u v = Process $ \name -> do
-      f <- runProcess u name
-      a <- runProcess v name
-      pure (f a)
-
-instance Monad m => Monad (Process m) where
- (>>=) u v = Process $ \name -> do
-      a <- runProcess  u    name
-      runProcess (v a) name
 
 proc :: Monad m => String -> Process m (LabelRef, a) -> Network m a
 proc name p = do
@@ -71,12 +63,6 @@ proc name p = do
   return r
 
 
-procQ :: Monad m => Haskell.Q a -> State.StateT s (Network m) a
-procQ m = lift (U.liftQ m)
-
-sfresh :: Monad m => String -> String -> State.StateT a (Network m) Haskell.Name
-sfresh pre name = lift $ U.liftQ $ Haskell.newName (pre <> "_" <> name)
-
 input :: Monad m => Channel a -> Process m (Input a)
 input (UnsafeChannel u) = Process $ \name -> do
   s <- State.get
@@ -89,46 +75,13 @@ input (UnsafeChannel u) = Process $ \name -> do
     u' <- U.Channel <$> sfresh name "dup"
     return (u', us)
 
+
 output :: Monad m => Process m (Channel a)
 output = Process $ \name -> do
   s <- State.get
   u' <- U.Channel <$> sfresh name "out"
   State.put s { piOutputs = Set.insert u' $ piOutputs s }
   return $ UnsafeChannel u'
-
-
-type LabelRef = Haskell.Q U.Next
-type InstructionRef = Haskell.Q U.Instruction
-
-label0 :: Monad m => Process m LabelRef
-label0 = Process $ \name -> do
-  l <- U.Label <$> sfresh name "label"
-  return $ return $ U.Next l Map.empty
-
-instr0 :: Monad m => LabelRef -> InstructionRef -> Process m ()
-instr0 lr ir = Process $ \_ -> do
-  U.Next l _ <- procQ lr
-  i <- procQ ir
-  s <- State.get
-  State.put s { piInstructions = Map.insert l (U.Info Set.empty i) $ piInstructions s }
-
-
-label1 :: Monad m => Process m (Haskell.TExpQ a -> LabelRef)
-label1 = Process $ \name -> do
-  l <- U.Label <$> sfresh name "label"
-  v <- U.Var <$> sfresh name "var"
-  return $ \x -> do
-    x' <- x
-    return $ U.Next l $ Map.singleton v (Haskell.unType x')
-
-instr1 :: Monad m => (Haskell.TExpQ a -> LabelRef) -> (Haskell.TExpQ a -> InstructionRef) -> Process m ()
-instr1 lr ir = Process $ \_ -> do
-  U.Next l is <- procQ $ lr [|| Savage.error "Placeholder variable" ||]
-  let binds = Map.keysSet is
-  let [U.Var b0] = Map.keys is
-  i <- procQ $ ir (Haskell.unsafeTExpCoerce $ Haskell.varE b0)
-  s <- State.get
-  State.put s { piInstructions = Map.insert l (U.Info binds i) $ piInstructions s }
 
 
 pull :: Input a -> (Haskell.TExpQ a -> LabelRef) -> LabelRef -> InstructionRef
@@ -166,4 +119,5 @@ bool b0 true0 false0 = do
 
 done :: InstructionRef
 done = return $ U.I'Done
+
 

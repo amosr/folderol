@@ -42,7 +42,9 @@ minimiseProcess p =
    = Info bs
    $ case i of
       I'Pull c v n n'
-       -> I'Pull c v (get n) (get n')
+       -- We need to be careful with the 'have' part of pull, because it requires 'v' to be an available variable
+       -- For now don't minimise that case at all
+       -> I'Pull c v n (get n')
       I'Push c e n
        -> I'Push c e (get n)
       I'Jump n

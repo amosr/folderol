@@ -33,6 +33,9 @@ library
                     Folderol.Internal.Haskell
 
                     Folderol.Process.Map
+                    Folderol.Process.Filter
+                    Folderol.Process.Zip
+                    Folderol.Process
 
                     Folderol.Splice
                     Folderol.Sink
@@ -43,6 +46,7 @@ library
                     Folderol.Typed.Name
                     Folderol.Typed.Network
                     Folderol.Typed.Process
+                    Folderol.Typed.Process.Internal
 
                     Folderol.Untyped.Codegen
                     Folderol.Untyped.Name

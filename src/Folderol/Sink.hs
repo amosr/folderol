@@ -41,11 +41,11 @@ listOfChannel into
 vectorOfChannel :: IORef (Vector.Vector a) -> Sink IO a
 vectorOfChannel into
  = Sink
- { init = (,) 0 <$> MVector.new 4
+ { init = (,) 0 <$> MVector.unsafeNew 4
 
  , push = \(used,xs) x -> do
           xs' <- if used >= MVector.length xs
-                 then MVector.grow xs (used * 2)
+                 then MVector.unsafeGrow xs (used * 2)
                  else return xs
           MVector.unsafeWrite xs' used x
           return (used + 1, xs')

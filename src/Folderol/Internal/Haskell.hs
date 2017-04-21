@@ -15,14 +15,15 @@ import Folderol.Internal.Pretty
 import Language.Haskell.TH as Haskell
 import Language.Haskell.TH.Syntax as Haskell
 
+import qualified Data.List as List
+
 type TExpQ a = Haskell.Q (Haskell.TExp a)
 
 -- Orphans: too bad.
 instance Pretty Haskell.Exp where
  -- Show instead of using TH's pretty: it seems to use the wrong variable names, and it's not all that pretty anyway.
- pretty = text . show . Haskell.ppr
+ pretty = text . show -- . Haskell.ppr
 
-{-
 instance Pretty Haskell.Name where
  pretty x 
   | isPrefixOf "GHC." qualified
@@ -34,8 +35,7 @@ instance Pretty Haskell.Name where
   = text qualified
   where 
    qualified = show x
-   unqualified = reverse $ takeWhile (/='.') $ reverse qualified
--}
+   unqualified = reverse $ List.takeWhile (/='.') $ reverse qualified
 
 instance Pretty (Haskell.TExp a) where
  pretty = pretty . unType

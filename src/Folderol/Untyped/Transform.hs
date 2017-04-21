@@ -20,37 +20,44 @@ import qualified Folderol.Internal.Pretty as Pretty
 data FuseOptions
  = FuseOptions
  { verbose :: Bool
+ , details :: Bool
  , maximumProcessCount :: Maybe Int }
 
 defaultFuseOptions :: FuseOptions
 defaultFuseOptions
- = FuseOptions False Nothing
+ = FuseOptions False False Nothing
 
-logout :: FuseOptions -> [Char] -> Pretty.Doc a -> Haskell.Q ()
-logout opts pre doc = when (verbose opts) $ do
+logout :: Bool -> [Char] -> Pretty.Doc a -> Haskell.Q ()
+logout is pre doc = when is $ do
   Haskell.runIO $ putStrLn pre
   Haskell.runIO $ putStrLn $ show doc
 
 
 fuseGraph :: Spawn m => FuseOptions -> U.NetworkGraph m -> Haskell.TExpQ (m ())
 fuseGraph opts graph0 = do
-  logout opts "0: input graph" $ U.prettyNetworkSummary graph0
+  logout (verbose opts) "0: input graph" $ U.prettyNetworkSummary graph0
+  logout (details opts) "0: input graph" $ Pretty.pretty graph0
 
   graph1 <- U.insertDups graph0
-  logout opts "1: insertDups" $ U.prettyNetworkSummary graph0
+  logout (verbose opts) "1: insertDups" $ U.prettyNetworkSummary graph0
+  logout (details opts) "1: insertDups" $ Pretty.pretty graph0
 
   graph2 <- return $ U.cullOutputs graph1
-  logout opts "2: cullOutputs" $ U.prettyNetworkSummary graph2
+  logout (verbose opts) "2: cullOutputs" $ U.prettyNetworkSummary graph2
+  logout (details opts) "2: cullOutputs" $ Pretty.pretty graph2
 
   graph3 <- U.fuseNetwork graph2
-  logout opts "3: fuseNetwork" $ U.prettyNetworkSummary graph3
+  logout (verbose opts) "3: fuseNetwork" $ U.prettyNetworkSummary graph3
+  logout (details opts) "3: fuseNetwork" $ Pretty.pretty graph3
 
   checkProcessCount graph3 (maximumProcessCount opts)
   graph4 <- return $ U.cullOutputs graph3
-  logout opts "4: cullOutputs" $ U.prettyNetworkSummary graph4
+  logout (verbose opts) "4: cullOutputs" $ U.prettyNetworkSummary graph4
+  logout (details opts) "4: cullOutputs" $ Pretty.pretty graph4
 
   graph5 <- U.minimiseNetwork graph4
-  logout opts "5: minimiseNetwork" $ U.prettyNetworkSummary graph5
+  logout (verbose opts) "5: minimiseNetwork" $ U.prettyNetworkSummary graph5
+  logout (details opts) "5: minimiseNetwork" $ Pretty.pretty graph5
   code <- Haskell.runQ $ genNetwork graph5
   return code
 
