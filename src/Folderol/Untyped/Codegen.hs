@@ -153,7 +153,7 @@ stateName' c True = chanName c "state'"
 stateName' c False = chanName c "state"
 
 stateName :: Channel -> Haskell.Name
-stateName c = stateName c False
+stateName c = stateName' c False
 
 
 genNext :: Map Channel Bool -> Map Channel Bool -> Next -> Haskell.ExpQ
