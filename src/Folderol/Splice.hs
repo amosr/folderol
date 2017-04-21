@@ -1,6 +1,12 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE TemplateHaskell #-}
-module Folderol.Splice where
+module Folderol.Splice
+ ( fuse
+ , fuseList_1_1
+ , fuseVector_1_1
+ , U.FuseOptions(..)
+ , U.defaultFuseOptions
+ ) where
 
 import Folderol.Typed
 import qualified Folderol.Untyped.Transform as U
@@ -11,25 +17,37 @@ import qualified Folderol.Sink as Sink
 
 import System.IO (IO)
 import Data.IORef
+import qualified Data.Vector as Vector
 
 import P
 
 import qualified Folderol.Internal.Haskell as Haskell
 
 
-fuse :: Spawn m => U.Network m () -> Haskell.TExpQ (m ())
-fuse nett = do
+fuse :: Spawn m => U.FuseOptions -> U.Network m () -> Haskell.TExpQ (m ())
+fuse opts nett = do
   (graph0,_) <- U.getNetwork nett
-  U.fuseGraph graph0
+  U.fuseGraph opts graph0
 
-fuseList_1_1 :: (Channel a -> U.Network IO (Channel b)) -> Haskell.TExpQ ([a] -> IO [b])
-fuseList_1_1 nett =
+fuseList_1_1 :: U.FuseOptions -> (Channel a -> U.Network IO (Channel b)) -> Haskell.TExpQ ([a] -> IO [b])
+fuseList_1_1 opts nett =
   [|| (\inlist -> do
     outref <- newIORef []
-    $$(fuse $ do
+    $$(fuse opts $ do
       ins <- source [|| (Source.sourceOfList inlist) ||]
       outs <- nett ins
       sink outs [||Sink.listOfChannel outref||])
+    readIORef outref)
+  ||]
+
+fuseVector_1_1 :: U.FuseOptions -> (Channel a -> U.Network IO (Channel b)) -> Haskell.TExpQ (Vector.Vector a -> IO (Vector.Vector b))
+fuseVector_1_1 opts nett =
+  [|| (\invec -> do
+    outref <- newIORef Vector.empty
+    $$(fuse opts $ do
+      ins <- source [|| (Source.sourceOfVector invec) ||]
+      outs <- nett ins
+      sink outs [||Sink.vectorOfChannel outref||])
     readIORef outref)
   ||]
 

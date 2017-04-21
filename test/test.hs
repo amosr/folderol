@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-import qualified Test.Folderol.Process.Map
+import qualified Test.Folderol.MaximumProcessCount
+import qualified Test.Folderol.Kernel
 
 import System.IO
 import System.Exit
@@ -12,8 +13,9 @@ main = do
   hSetBuffering stdout LineBuffering
   hSetBuffering stderr LineBuffering
 
-  results <- sequence [
-      Test.Folderol.Process.Map.tests
+  results <- sequence
+    [ Test.Folderol.MaximumProcessCount.tests
+    , Test.Folderol.Kernel.tests
     ]
 
   unless (and results) $ exitFailure

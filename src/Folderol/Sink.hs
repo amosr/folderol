@@ -7,6 +7,9 @@ import P
 import System.IO (IO, putStrLn)
 import Data.IORef
 
+import qualified Data.Vector as Vector
+import qualified Data.Vector.Mutable as MVector
+
 
 data Sink m a
  = forall s
@@ -33,6 +36,25 @@ listOfChannel into
  , push = \xs x -> return (x : xs)
  , done = \xs   -> writeIORef into (reverse xs)
  }
+
+{-# INLINE vectorOfChannel #-}
+vectorOfChannel :: IORef (Vector.Vector a) -> Sink IO a
+vectorOfChannel into
+ = Sink
+ { init = (,) 0 <$> MVector.new 4
+
+ , push = \(used,xs) x -> do
+          xs' <- if used >= MVector.length xs
+                 then MVector.grow xs (used * 2)
+                 else return xs
+          MVector.unsafeWrite xs' used x
+          return (used + 1, xs')
+
+ , done = \(used,xs) -> do
+          xs' <- Vector.unsafeFreeze $ MVector.unsafeSlice 0 used xs
+          writeIORef into xs'
+ }
+
 
 instance Monad m => Monoid (Sink m a) where
  mempty = Sink
