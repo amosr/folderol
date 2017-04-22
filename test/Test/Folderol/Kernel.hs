@@ -3,6 +3,7 @@
 module Test.Folderol.Kernel where
 
 -- Separate the kernels to make viewing Core easier
+import Test.Folderol.Kernel.Cycle
 import Test.Folderol.Kernel.Filter1
 import Test.Folderol.Kernel.FilterMap
 import Test.Folderol.Kernel.Map1
@@ -26,6 +27,12 @@ import           Control.Monad.Trans.Class (MonadTrans(..))
 
 genVec :: Gen IO (Vector.Vector Int)
 genVec = Vector.fromList <$> Gen.list (Range.linear 0 100) (Gen.int $ Range.linear 0 100)
+
+prop_cycle3 :: Property
+prop_cycle3 = property $ do
+  xs <- forAll genVec
+  ys <- lift $ cycle3 xs
+  ys === (Vector.zip (xs <> xs) xs)
 
 prop_map1 :: Property
 prop_map1 = property $ do
