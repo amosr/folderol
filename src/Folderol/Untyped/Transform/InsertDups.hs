@@ -4,6 +4,7 @@
 {-# LANGUAGE PatternGuards #-}
 module Folderol.Untyped.Transform.InsertDups where
 
+import Folderol.Untyped.Builtins
 import Folderol.Untyped.Name
 import Folderol.Untyped.Network
 import Folderol.Untyped.Process
@@ -34,7 +35,7 @@ import qualified Data.Set as Set
 insertDups :: NetworkGraph m -> Haskell.Q (NetworkGraph m)
 insertDups graph = do
   (procs', chans') <- go [] [] $ nProcesses graph
-  return $ graph { nProcesses = procs', nOriginalChannels = nOriginalChannels graph <> chans' }
+  dupSourceSinks $ graph { nProcesses = procs', nOriginalChannels = nOriginalChannels graph <> chans' }
  where
   go acc chans [] = return (reverse acc, chans)
   go acc chans (p1:ps) 
@@ -68,13 +69,31 @@ insertDups graph = do
    | otherwise
    = anyIntersect ins (p : acc) ps
 
+
+-- | Duplicate when a source and sink use same channel:
+-- insert process to loop over source and push into sink.
+dupSourceSinks :: NetworkGraph m -> Haskell.Q (NetworkGraph m)
+dupSourceSinks g0 = foldM go g0 $ Map.keys $ nSources g0
+ where
+  go graph c
+   | Just snk <- Map.lookup c $ nSinks graph
+   = do
+    (p,c') <- dup1 c
+    return graph
+      { nProcesses = nProcesses graph <> [p]
+      , nOriginalChannels = nOriginalChannels graph <> [c']
+      , nSinks = Map.insert c' snk $ Map.delete c $ nSinks graph
+      }
+   | otherwise
+   = return graph
+
 -- | Rewrite a process to use a different input channel
 --
 -- > substChannelInput (xs := as) (ys <- map f xs)
 -- ==>
 -- > ys <- map f as
 --
--- TODO: this could easily work on outputs too, not sure if that's useful
+-- This could easily work on outputs too, not sure if that's useful
 substChannelInput :: Channel -> Channel -> Process -> Process
 substChannelInput cfrom cto proc
  = let inputs = Set.insert cto $ Set.delete cfrom $ pInputs proc 
@@ -104,42 +123,4 @@ substChannelInput cfrom cto proc
    = cto
    | otherwise
    = c
-
-
--- | Duplicator node: pull from an input, push to two outputs
--- > (xs0, xs1) <- dup2 xs
---
--- TODO: should this live elsewhere?
-dup2 :: Channel -> Haskell.Q (Process, Channel, Channel)
-dup2 input = do
-  out1 <- chan
-  out2 <- chan
-  var0  <- var
-  lbl0 <- label
-  lbl1 <- label
-  lbl2 <- label
-  lbl3 <- label
-  lbl4 <- label
-
-  vxp  <- Haskell.varE $ unVar var0
-
-  let next  l = Next l Map.empty
-  let nextB l = Next l (Map.singleton var0 vxp)
-  let inst  l i = (l, Info Set.empty i)
-  let instB l i = (l, Info (Set.singleton var0) i)
-
-  let is = [ inst  lbl0 (I'Pull input var0 (next  lbl1) (next lbl4))
-           , instB lbl1 (I'Push out1  vxp  (nextB lbl2))
-           , instB lbl2 (I'Push out2  vxp  (next  lbl3))
-           , inst  lbl3 (I'Drop input      (next  lbl0))
-           , inst  lbl4  I'Done]
-
-  let proc = Process "dup2" (Set.singleton input) (Set.fromList [out1, out2]) (next lbl0) (Map.fromList is)
-
-  return (proc, out1, out2)
-
- where
-  chan = Channel <$> Haskell.newName "dup"
-  label = Label <$> Haskell.newName "label"
-  var   = Var <$> Haskell.newName "var"
 

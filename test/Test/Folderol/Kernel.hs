@@ -10,6 +10,7 @@ import Test.Folderol.Kernel.Map2
 import Test.Folderol.Kernel.Map2Ignorant
 import Test.Folderol.Kernel.PartitionAppend
 import Test.Folderol.Kernel.Zip1
+import Test.Folderol.Kernel.ZipSelf
 import Test.Folderol.Kernel.ZipWith3
 
 import P
@@ -80,6 +81,13 @@ prop_zip1 = property $ do
   ys <- fmap show <$> forAll genVec
   zs <- lift $ zip1 xs ys
   zs === Vector.zip xs ys
+
+prop_zipSelf :: Property
+prop_zipSelf = property $ do
+  xs <- forAll genVec
+  ys <- lift $ zipSelf xs
+  ys === Vector.zip xs xs
+
 
 prop_zipWith3 :: Property
 prop_zipWith3 = property $ do

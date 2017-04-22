@@ -49,6 +49,7 @@ library
                     Folderol.Typed.Process
                     Folderol.Typed.Process.Internal
 
+                    Folderol.Untyped.Builtins
                     Folderol.Untyped.Codegen
                     Folderol.Untyped.Name
                     Folderol.Untyped.Network
