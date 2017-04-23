@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Folderol.Sink where
@@ -7,8 +8,12 @@ import P
 import System.IO (IO)
 import Data.IORef
 
+import qualified Data.Vector.Generic as Generic
+import qualified Data.Vector.Generic.Mutable as MGeneric
 import qualified Data.Vector as Vector
 import qualified Data.Vector.Mutable as MVector
+
+import Control.Monad.Primitive
 
 
 data Sink m a
@@ -55,6 +60,63 @@ vectorOfChannel into
           writeIORef into xs'
  }
 
+{-# INLINE vectorOfChannelAtMost #-}
+vectorOfChannelAtMost :: forall m a vData vRefM
+     . PrimMonad m
+    => Generic.Vector   vData a
+    => MGeneric.MVector vRefM (vData a)
+    => Int
+    -> vRefM (PrimState m)    (vData a)
+    -> Sink m a
+vectorOfChannelAtMost upperlimit into
+ = Sink
+ { init = (,) 0 <$> MGeneric.unsafeNew upperlimit
+
+ , push = \(used,xs) x -> do
+          MGeneric.unsafeWrite xs used x
+          return (used + 1, xs)
+
+ , done = \(used,xs) -> do
+          xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
+          MGeneric.unsafeWrite into 0 xs'
+ }
+
+{-# INLINE vectorOfChannel'Generic #-}
+vectorOfChannel'Generic :: forall m a vData vRefM
+     . PrimMonad m
+    => Generic.Vector   vData a
+    => MGeneric.MVector vRefM (vData a)
+    => vRefM (PrimState m)    (vData a)
+    -> Sink m a
+vectorOfChannel'Generic into
+ = Sink
+ { init = (,) 0 <$> MGeneric.unsafeNew 4
+
+ , push = \(used,xs) x -> do
+          xs' <- if used >= MGeneric.length xs
+                 then MGeneric.unsafeGrow xs (used * 2)
+                 else return xs
+          MGeneric.unsafeWrite xs' used x
+          return (used + 1, xs')
+
+ , done = \(used,xs) -> do
+          xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
+          MGeneric.unsafeWrite into 0 xs'
+ }
+
+{-# INLINE scalarOfChannel #-}
+scalarOfChannel :: (PrimMonad m, MGeneric.MVector v a) => v (PrimState m) a -> Sink m a
+scalarOfChannel into
+ = Sink
+ { init = return Nothing
+
+ , push = \_ x -> do
+          return (Just x)
+
+ , done = \case
+           Just x  -> MGeneric.unsafeWrite into 0 x
+           Nothing -> return ()
+ }
 
 instance Monad m => Monoid (Sink m a) where
  mempty = Sink

@@ -1,9 +1,16 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Bench.Sized where
 
 import           Criterion
 
+import qualified Data.Vector.Generic as Generic
+
+{-# INLINE sizedWithVector #-}
+sizedWithVector :: Generic.Vector v Int => (v Int -> IO a) -> [Int] -> [Benchmark]
+sizedWithVector f = sized (f . Generic.enumFromTo 0)
+
 {-# INLINE sized #-}
-sized :: (Int -> IO ()) -> [Int] -> [Benchmark]
+sized :: (Int -> IO a) -> [Int] -> [Benchmark]
 sized f logs
  = fmap runBench
  $ fmap (\i -> truncate ((10 :: Double) ** fromIntegral i))

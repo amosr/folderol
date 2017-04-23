@@ -5,7 +5,7 @@ module Folderol.Source where
 
 import P
 
-import qualified Data.Vector as Vector
+import qualified Data.Vector.Generic as Generic
 
 data Source m a
  = forall s
@@ -36,12 +36,12 @@ sourceOfList as0
  }
 
 {-# INLINE sourceOfVector #-}
-sourceOfVector :: Monad m => Vector.Vector a -> Source m a
+sourceOfVector :: (Monad m, Generic.Vector v a) => v a -> Source m a
 sourceOfVector !as0
  = Source 
  { init = return 0
- , pull = \ix -> if ix < Vector.length as0
-                 then return (Just $ Vector.unsafeIndex as0 ix, ix + 1)
+ , pull = \ix -> if ix < Generic.length as0
+                 then return (Just $ Generic.unsafeIndex as0 ix, ix + 1)
                  else return (Nothing, ix)
  , done = \_  -> return ()
  }

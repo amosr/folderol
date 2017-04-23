@@ -1,12 +1,14 @@
+{-# OPTIONS_GHC -Wwarn #-}
 import qualified Bench.Chan
+import qualified Bench.Array
 
 import           Criterion.Main
--- import           Criterion.Types (Config(..))
 
 
 main :: IO ()
 main
  = defaultMainWith defaultConfig
- [ Bench.Chan.benches
+ [ Bench.Array.benches
+ -- , Bench.Chan.benches
  ]
 

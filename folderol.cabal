@@ -21,6 +21,7 @@ library
                      , wl-pprint-annotated
                      , ghc-prim
                      , vector
+                     , primitive
 
   ghc-options:         -Wall -O2
 
@@ -35,6 +36,7 @@ library
                     Folderol.Process.Append
                     Folderol.Process.Map
                     Folderol.Process.Filter
+                    Folderol.Process.Fold
                     Folderol.Process.Zip
                     Folderol.Process
 
@@ -94,6 +96,7 @@ benchmark bench
                      , criterion
                      , vector
                      , unagi-chan
+                     , primitive
 
   ghc-options:         -Wall -threaded -O2
 
