@@ -38,3 +38,9 @@ runChunked chunkSize v = do
   join2 (pushChunk chunkSize v $ writeChan i)
         (pullChunk (\_ -> return ()) $ readChan o)
 
+runChunkedUnbox :: Int -> Vector.Vector Int -> IO ()
+runChunkedUnbox chunkSize v = do
+  (i,o) <- newChan
+  join2 (pushChunkUnbox chunkSize v $ writeChan i)
+        (pullChunkUnbox (\_ -> return ()) $ readChan o)
+

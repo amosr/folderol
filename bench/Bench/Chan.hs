@@ -17,23 +17,27 @@ benches
  [ bgroup "None" 
    [ bgroup "Read" $ sized' Bench.Chan.None.runRead
    , bgroup "Copy" $ sized' Bench.Chan.None.runCopy
+   , bgroup "Copy Unbox" $ sized' Bench.Chan.None.runCopyUnbox
    ]
  , bgroup "Chan"
    [ bgroup "Maybe" $ sized' Bench.Chan.Base.runMaybe
-   , chunks Bench.Chan.Base.runChunked
+   , chunks "Chunk Boxed" Bench.Chan.Base.runChunked
+   , chunks "Chunk Unbox" Bench.Chan.Base.runChunkedUnbox
    ]
  , bgroup "Unagi"
    [ bgroup "Maybe" $ sized' Bench.Chan.Unagi.runMaybe
-   , chunks Bench.Chan.Base.runChunked
+   , chunks "Chunk Boxed" Bench.Chan.Unagi.runChunked
+   , chunks "Chunk Unbox" Bench.Chan.Unagi.runChunkedUnbox
    ]
  ]
  where
-  chunks f
-   = bgroup "Chunk"
-   [ bgroup "10"     $ sized' $ f 10
-   , bgroup "100"    $ sized' $ f 100
-   , bgroup "1,000"  $ sized' $ f 1000
+  chunks t f
+   = bgroup t
+   -- [ bgroup "10"     $ sized' $ f 10
+   -- , bgroup "100"    $ sized' $ f 100
+   [ bgroup "1,000"  $ sized' $ f 1000
+   -- , bgroup "10,000"  $ sized' $ f 10000
    ]
 
 sized' :: (Vector.Vector Int -> IO ()) -> [Benchmark]
-sized' f = sized (f . Vector.enumFromTo 0) [4..6]
+sized' f = sized (f . Vector.enumFromTo 0) [6]
