@@ -15,6 +15,8 @@ import Test.Folderol.Kernel.Zip1
 import Test.Folderol.Kernel.ZipSelf
 import Test.Folderol.Kernel.ZipWith3
 
+import qualified Folderol.Spawn as Spawn
+
 import P
 
 import Hedgehog

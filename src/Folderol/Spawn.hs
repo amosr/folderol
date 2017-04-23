@@ -33,16 +33,16 @@ instance Spawn IO where
   where
    {-# INLINE sink #-}
    sink q = Sink.Sink
-    { Sink.init = (,) 0 <$> MVector.unsafeNew chunkSize
+    { Sink.init = (,) 0 <$> MVector.unsafeNew channelChunkSize
 
     , Sink.push = \(ix,mv) x -> do
        MVector.unsafeWrite mv ix x
        let ix' = ix + 1
-       case ix' == chunkSize of
+       case ix' == channelChunkSize of
         True -> do
           v <- Vector.unsafeFreeze mv
           writeChan q v
-          mv' <- MVector.unsafeNew chunkSize
+          mv' <- MVector.unsafeNew channelChunkSize
           return (0, mv')
         False -> do
           return (ix', mv)
@@ -68,6 +68,7 @@ instance Spawn IO where
     , Source.done = \_ -> return ()
     }
 
-   -- TODO: this should be exposed / configurable
-   chunkSize = 2
+-- TODO: this should be configurable
+channelChunkSize :: Int
+channelChunkSize = 100
 
