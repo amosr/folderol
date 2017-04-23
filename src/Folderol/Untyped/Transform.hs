@@ -7,7 +7,7 @@ import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.NetworkSummary as U
 import qualified Folderol.Untyped.Transform.InsertDups as U
 import qualified Folderol.Untyped.Transform.CullOutputs as U
-import qualified Folderol.Untyped.Transform.Fusion as U
+import qualified Folderol.Untyped.Transform.FuseNetwork as U
 import qualified Folderol.Untyped.Transform.Minimise as U
 import Folderol.Spawn
 

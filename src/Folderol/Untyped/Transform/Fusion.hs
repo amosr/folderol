@@ -6,7 +6,6 @@
 module Folderol.Untyped.Transform.Fusion where
 
 import Folderol.Untyped.Name
-import Folderol.Untyped.Network
 import Folderol.Untyped.Process
 
 import qualified Folderol.Internal.Haskell as Haskell
@@ -33,47 +32,6 @@ data FuseLabel
  , isPQ :: Map Channel InputState
  }
  deriving (Eq, Ord, Show)
-
-fuseNetwork :: NetworkGraph m -> Haskell.Q (NetworkGraph m)
-fuseNetwork graph
- = do ps <- go (nProcesses graph)
-      return graph { nProcesses = ps }
- where
-  go [] = return []
-  go [p] = return [p]
-  go (p:ps) = tryFuse p ps
-     >>= \case
-      Nothing -> do
-        ps' <- go ps
-        return (p : ps')
-      Just ps' -> do
-        go ps'
-
-  tryFuse p ps
-   = case findConnected p [] ps of
-      Nothing -> return Nothing
-      Just (q,ps') -> EitherT.runEitherT (fusePair p q)
-       >>= \case
-        Left (Error'Internal err) -> fail (show err)
-        Left (Error'Fusion _) -> tryFuse p ps'
-         >>= \case
-          Nothing -> return Nothing
-          Just ps'' -> return $ Just (q:ps'')
-        Right p' -> return $ Just (p' : ps')
-
-  findConnected _ _ [] = Nothing
-  findConnected p acc (q:ps)
-   | connected p q
-   = Just (q,acc <> ps)
-   | otherwise
-   = findConnected p (q : acc) ps
-
-  connected p q
-   = not
-   $ Set.null
-   $ Set.intersection
-     (pInputs  p `Set.union` pInputs  q)
-     (pOutputs p `Set.union` pOutputs q)
 
 data Error
  -- | Can't fuse two processes because they appear to be inherently unbounded:

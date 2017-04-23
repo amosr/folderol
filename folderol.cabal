@@ -60,6 +60,7 @@ library
                     Folderol.Untyped.Transform.CullOutputs
                     Folderol.Untyped.Transform.InsertDups
                     Folderol.Untyped.Transform.Fusion
+                    Folderol.Untyped.Transform.FuseNetwork
                     Folderol.Untyped.Transform.Minimise
 
 test-suite test
