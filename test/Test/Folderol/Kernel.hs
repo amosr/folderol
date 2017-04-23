@@ -3,6 +3,7 @@
 module Test.Folderol.Kernel where
 
 -- Separate the kernels to make viewing Core easier
+import Test.Folderol.Kernel.AppendSelf
 import Test.Folderol.Kernel.Cycle
 import Test.Folderol.Kernel.Filter1
 import Test.Folderol.Kernel.FilterMap
@@ -26,7 +27,13 @@ import           Control.Monad.Trans.Class (MonadTrans(..))
 
 
 genVec :: Gen IO (Vector.Vector Int)
-genVec = Vector.fromList <$> Gen.list (Range.linear 0 100) (Gen.int $ Range.linear 0 100)
+genVec = Vector.fromList <$> Gen.list (Range.linear 0 $ Spawn.channelChunkSize * 3) (Gen.int $ Range.linear 0 100)
+
+prop_appendSelf :: Property
+prop_appendSelf = property $ do
+  xs <- forAll genVec
+  ys <- lift $ appendSelf xs
+  ys === (xs <> xs)
 
 prop_cycle3 :: Property
 prop_cycle3 = property $ do

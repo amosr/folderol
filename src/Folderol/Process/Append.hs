@@ -24,7 +24,7 @@ append as bs = Proc.proc "append" $ do
   l6 <- Proc.label0
 
   Proc.instr0 l0 $
-    Proc.pull i0 l1 l5
+    Proc.pull i0 l1 l3
 
   Proc.instr1 l1 $ \x ->
     Proc.push o0 x l2
@@ -39,7 +39,7 @@ append as bs = Proc.proc "append" $ do
     Proc.push o0 x l5
 
   Proc.instr0 l5 $
-    Proc.drop i0 l3
+    Proc.drop i1 l3
 
   Proc.instr0 l6 $
     Proc.done
