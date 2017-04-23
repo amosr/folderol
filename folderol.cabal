@@ -76,5 +76,23 @@ test-suite test
                      , hedgehog == 0.1
                      , vector
 
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -threaded -O2
+
+
+benchmark bench
+  type: exitcode-stdio-1.0
+  main-is: bench.hs
+  hs-source-dirs: bench
+
+  build-depends:
+                       folderol
+                     , ambiata-p
+                     , ambiata-x-eithert
+                     , base
+                     , transformers
+                     , criterion
+                     , vector
+                     , unagi-chan
+
+  ghc-options:         -Wall -threaded -O2
 

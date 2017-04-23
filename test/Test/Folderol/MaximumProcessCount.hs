@@ -32,4 +32,4 @@ prop_increment_2 = property $ do
   ys === fmap (*2) (fmap (+1) xs)
 
 tests :: IO Bool
-tests = $$(checkSequential)
+tests = $$(checkConcurrent)

@@ -35,4 +35,4 @@ isSell (Stock s) = s > 10
 
 
 tests :: IO Bool
-tests = $$(checkSequential)
+tests = $$(checkConcurrent)

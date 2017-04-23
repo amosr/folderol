@@ -116,4 +116,4 @@ prop_zipWith3 = property $ do
      in  ds
 
 tests :: IO Bool
-tests = $$(checkSequential)
+tests = $$(checkConcurrent)
