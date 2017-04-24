@@ -40,6 +40,21 @@ sourceOfVector :: (Monad m, Generic.Vector v a) => v a -> Source m a
 sourceOfVector !as0
  = Source 
  { init = return 0
+ , pull = \ix -> if ix >= Generic.length as0
+                 then return (Nothing, ix)
+                 else return (Just $ Generic.unsafeIndex as0 ix, ix + 1)
+ , done = \_  -> return ()
+ }
+
+-- | SourceOfVector with the branches flipped.
+-- Used for benchmarking.
+-- Originally had this version, but it turns out flipping the branches makes it 25% faster or so,
+-- because this version constructs a loop with the end case in the middle.
+{-# INLINE sourceOfVectorFlip #-}
+sourceOfVectorFlip :: (Monad m, Generic.Vector v a) => v a -> Source m a
+sourceOfVectorFlip !as0
+ = Source 
+ { init = return 0
  , pull = \ix -> if ix < Generic.length as0
                  then return (Just $ Generic.unsafeIndex as0 ix, ix + 1)
                  else return (Nothing, ix)

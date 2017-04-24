@@ -97,6 +97,7 @@ benchmark bench
                      , vector
                      , unagi-chan
                      , primitive
+                     , ghc-prim
 
   ghc-options:         -Wall -threaded -O2
 
