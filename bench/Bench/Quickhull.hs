@@ -13,12 +13,12 @@ import           Criterion
 benches :: Benchmark
 benches
  = bgroup "Quickhull"
- [ bgroup "Vector" 
-   [ bgroup "Store"     $ sized' Bench.Quickhull.Vector.runQuickhullStore
-   , bgroup "Recompute" $ sized' Bench.Quickhull.Vector.runQuickhullRecompute
-   ]
+ [ bgroup "Hand"        $ sized' Bench.Quickhull.Hand.runQuickhull
  , bgroup "Folderol"    $ sized' Bench.Quickhull.Folderol.runQuickhull
- , bgroup "Hand"        $ sized' Bench.Quickhull.Hand.runQuickhull
+ , bgroup "Vector" 
+   [ bgroup "Recompute" $ sized' Bench.Quickhull.Vector.runQuickhullRecompute
+   , bgroup "Store"     $ sized' Bench.Quickhull.Vector.runQuickhullStore
+   ]
  ]
  where
   sized' f = sizedWithVector f [6..7]

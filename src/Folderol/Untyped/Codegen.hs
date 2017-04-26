@@ -96,10 +96,9 @@ genProcess sources sinks proc
       body0    <- genNext (fmap (const False) sources') (fmap (const False) sinks') $ pInitial proc
       let body1 = foldr unwrapInit body0 (Map.keys sources' <> Map.keys sinks')
 
+      instrs <- mapM (genInstruction sources' sinks') $ Map.toList $ pInstructions proc
       -- Generate all the label definitions.
-      body2    <- Haskell.letE
-                 (fmap (genInstruction sources' sinks') $ Map.toList $ pInstructions proc)
-                $ return body1
+      let body2 = Haskell.LetE (concat instrs) body1
 
       -- Unwrap the sources and sinks.
       -- These bind functions like c_init, c_pull or c_push, and c_done.
@@ -161,14 +160,15 @@ genNext srcs snks (Next ll bs)
   args = fmap st' (Map.toList srcs) <> fmap st' (Map.toList snks) <> fmap snd (Map.toList bs)
   st' (c,b) = Haskell.VarE $ stateName' c b
 
-genInstruction :: Map Channel (Source m) -> Map Channel (Sink m) -> (Label, Info) -> Haskell.DecQ
+genInstruction :: Map Channel (Source m) -> Map Channel (Sink m) -> (Label, Info) -> Haskell.Q [Haskell.Dec]
 genInstruction sources sinks (l, info)
  = do body <- bodyQ $ infoInstruction info
 
       -- Insert wildcard case expressions for every binding to silence -Wunused-binds
       forced <- foldM insertForce body $ Set.toList $ infoBindings info 
       let clause = Haskell.Clause (bindsSpec <> bindsSt <> binds) (Haskell.NormalB forced) []
-      return $ Haskell.FunD l' [clause]
+      let inline = Haskell.InlineP l' Haskell.Inline Haskell.ConLike Haskell.AllPhases
+      return [Haskell.PragmaD inline, Haskell.FunD l' [clause] ]
  where
   l'    = unLabel l
 

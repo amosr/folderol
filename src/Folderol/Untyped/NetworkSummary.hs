@@ -1,5 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PatternGuards #-}
 module Folderol.Untyped.NetworkSummary where
@@ -26,23 +27,55 @@ import           Data.String (String)
 prettyNetworkSummary :: NetworkGraph m -> Pretty.Doc b
 prettyNetworkSummary = go . networkSummary
  where
- go (Summary s _)
-  = Pretty.vsep $ fmap (pNode $ totals s) s
+ go summary@(Summary s _)
+  = Pretty.vsep $ fmap (pNode summary $ totals s) s
 
- pNode (i,j) (Node ins op _opt outs)
-  = Pretty.vsep
-  [ -- Pretty.text (List.replicate i ' ') <> "  " <> Pretty.text (padc j ' ' opt)
-    Pretty.text (padr i ' ' $ pChans ins) <> "->" <> Pretty.text (padc j '-' op) <> "-> " <> Pretty.text (pChans outs)
-  ]
+ pNode summary (i,j) (Node ins op proc outs)
+  = Pretty.text (padr i ' ' $ pChans ins) <> "->" <> Pretty.text (padc j '-' op) <> "-> " <> Pretty.text (pChans outs)
+  <> Pretty.line
+  <> case proc of 
+      Just p -> Pretty.indent i (prettyProcessSummary summary p)
+      Nothing -> ""
 
  totals = foldl tmax (0,0)
- tmax (i,j) (Node ins op opt _)
-  = (i `max` length (pChans ins), j `max` length op `max` length opt)
+ tmax (i,j) (Node ins op _ _)
+  = (i `max` length (pChans ins), j `max` length op)
 
  pChans [] = "()"
  pChans [p] = p <> " "
  pChans (p:ps)
   = p <> " " <> pChans ps
+
+prettyProcessSummary :: Summary -> Process -> Pretty.Doc b
+prettyProcessSummary (Summary _ chans) p@(Process _ _ _ (Next linit _) instrs) =
+ "->" <> pLabel linit <> Pretty.line <> Pretty.indent 2 (Pretty.vsep (fmap pInstr $ Map.toList instrs))
+ where
+  lns = processLabelShortNames p
+
+  pLabel l
+   | Just s <- Map.lookup l lns = Pretty.text s
+   | otherwise = "??"
+
+  pChan c
+   | Just s <- Map.lookup c chans = Pretty.text s
+   | otherwise = "??"
+
+  pInstr (l, Info _ i)
+   = pLabel l <> ": " <> pInstr' i
+
+  pInstr' = \case
+   I'Pull c _ (Next l _) (Next l' _)
+    -> "pull " <> pChan c <> " " <> pLabel l <> " " <> pLabel l'
+   I'Push c _ (Next l _)
+    -> "push " <> pChan c <> " " <> pLabel l
+   I'Jump (Next l _)
+    -> "jump " <> pLabel l
+   I'Bool _ (Next l _) (Next l' _)
+    -> "bool " <> pLabel l <> " " <> pLabel l'
+   I'Drop c (Next l _)
+    -> "drop " <> pChan c <> " " <> pLabel l
+   I'Done
+    -> "done"
 
 
 networkSummary :: NetworkGraph m -> Summary
@@ -59,13 +92,13 @@ networkSummary g@(NetworkGraph sources sinks procs _) = Summary ns names
 
  -- We can use TH pretty printer here because Source & Sink expressions don't have to be exact
  mkSource (c, Source s)
-  = Node [] (bket $ show $ Haskell.ppr $ Haskell.unType s) "(source)" [chan c]
+  = Node [] (bket $ show $ Haskell.ppr $ Haskell.unType s) Nothing [chan c]
 
  mkSink (c, Sink s)
-  = Node [chan c] (bket $ show $ Haskell.ppr $ Haskell.unType s) "(sink)" []
+  = Node [chan c] (bket $ show $ Haskell.ppr $ Haskell.unType s) Nothing []
 
  mkProc p
-  = Node (fmap chan $ Set.toList $ pInputs p) (pket $ pName p) "(process)" (fmap chan $ Set.toList $ pOutputs p)
+  = Node (fmap chan $ Set.toList $ pInputs p) (pket $ pName p) (Just p) (fmap chan $ Set.toList $ pOutputs p)
 
  chan c
   | Just n <- Map.lookup c names
@@ -78,10 +111,15 @@ networkShortNames :: NetworkGraph m -> Map Channel String
 networkShortNames (NetworkGraph _ _ _ chans) = names
  where
   padlen = length $ show $ length chans
-
   names = Map.fromList $ List.zipWith namedChan [0 :: Int ..] $ chans
+  namedChan i c = (c,  padl padlen ' ' ("$" <> show i))
 
-  namedChan i c = (c, "$" <> padl padlen ' ' (show i))
+processLabelShortNames :: Process -> Map Label String
+processLabelShortNames (Process _ _ _ _ instrs) = names
+ where
+  padlen = length $ show $ length instrs
+  names = Map.fromList $ List.zipWith namedLabel [0 :: Int ..] $ Map.keys instrs
+  namedLabel i l = (l, padl padlen ' ' ("L" <> show i))
 
 data Summary
  = Summary
@@ -93,7 +131,7 @@ data Node
  = Node
  { inputs   :: [String]
  , operator :: String
- , opType   :: String
+ , opProc   :: Maybe Process
  , outputs  :: [String]
  }
 

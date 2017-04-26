@@ -3,56 +3,33 @@
 {-# LANGUAGE PatternGuards #-}
 module Bench.Quickhull.Hand where
 
+import Bench.Quickhull.HandFilterMax
+
 import Bench.Quickhull.Skeleton
 import qualified Data.Vector.Unboxed as Unbox
-import qualified Data.Vector.Unboxed.Mutable as MUnbox
 
-import Control.Monad.ST
-
-{-# INLINE filterMax #-}
-filterMax :: Line -> Unbox.Vector Point -> (Point, Unbox.Vector Point)
-filterMax l ps
+-- | Find left-most and right-most pivot points to start algorithm
+-- Assert |xs| >= 1
+{-# INLINE pivots #-}
+pivots :: Unbox.Vector Point -> Line
+pivots ps
  | Unbox.length ps == 0
- = ((0,0), Unbox.empty)
+ = ((0,0),(0,0))
  | otherwise
- = runST $ do
-  mv <- MUnbox.unsafeNew $ Unbox.length ps
-  (x,y,wix) <- go0 mv
-  v <- Unbox.unsafeFreeze $ MUnbox.unsafeSlice 0 wix mv
-  return ((x,y), v)
+ = let (!x,!y) = Unbox.unsafeIndex ps 0 
+   in go 1 x y x y
  where
-  {-# INLINE go0 #-}
-  go0 !mv = do
-   let (x0,y0) = Unbox.unsafeIndex ps 0
-   let d0 = distance (x0,y0) l
-   case d0 > 0 of
-    True -> do
-      MUnbox.unsafeWrite mv 0 (x0,y0)
-      go mv 1 1 x0 y0 d0
-    False -> do
-     go mv 1 0 x0 y0 d0
-
-  {-# INLINE go #-}
-  go !mv !ix !writeIx !x1 !y1 !d1
-   = case ix >= Unbox.length ps of
-      True -> return (x1,y1, writeIx)
-      False -> do
-       let (x2,y2) = Unbox.unsafeIndex ps ix
-       let d2 = distance (x2,y2) l
-       case d2 > 0 of
-        True -> do
-          MUnbox.unsafeWrite mv writeIx (x2,y2)
-          case d1 > d2 of
-           True -> go mv (ix + 1) (writeIx + 1) x1 y1 d1
-           False -> go mv (ix + 1) (writeIx + 1) x2 y2 d2
-        False ->
-          case d1 > d2 of
-           True -> go mv (ix + 1) writeIx x1 y1 d1
-           False -> go mv (ix + 1) writeIx x2 y2 d2
+  go ix !x1 !y1 !x2 !y2
+   | ix >= Unbox.length ps
+   = ((x1,y1), (x2,y2))
+   | otherwise
+   = let (!x,!y) = Unbox.unsafeIndex ps ix
+         (!x1',!y1') = if x < x1 then (x,y) else (x1,y1)
+         (!x2',!y2') = if x < x2 then (x,y) else (x2,y2)
+     in  go (ix+1) x1' y1' x2' y2'
 
 runQuickhull :: Unbox.Vector Int -> IO (Unbox.Vector Point)
 runQuickhull is = do
   let ps = genPoints is
-  let hull = quickhullWith filterMax ps
+  let hull = quickhullWithPivots pivots filterMax ps
   hull `seq` return hull
-

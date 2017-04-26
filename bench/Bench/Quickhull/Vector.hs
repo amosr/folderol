@@ -6,6 +6,16 @@ module Bench.Quickhull.Vector where
 import Bench.Quickhull.Skeleton
 import qualified Data.Vector.Unboxed as Unbox
 
+-- | Find left-most and right-most pivot points to start algorithm
+-- Assert |xs| >= 1
+{-# INLINE pivots #-}
+pivots :: Unbox.Vector Point -> Line
+pivots xs
+ -- This would be easy enough to rewrite as a single fold
+ = let l = Unbox.foldl1 (\(i,j) (x,y) -> if i < x then (i,j) else (x,y)) xs
+       r = Unbox.foldl1 (\(i,j) (x,y) -> if i > x then (i,j) else (x,y)) xs
+   in (l,r)
+
 -- This version constructs a temporary manifest vector, to avoid recomputing the distances
 {-# INLINE filterMaxStore #-}
 filterMaxStore :: Line -> Unbox.Vector Point -> (Point, Unbox.Vector Point)
@@ -33,12 +43,12 @@ filterMaxRecompute l ps
 runQuickhullStore :: Unbox.Vector Int -> IO (Unbox.Vector Point)
 runQuickhullStore is = do
   let ps = genPoints is
-  let hull = quickhullWith filterMaxStore ps
+  let hull = quickhullWithPivots pivots filterMaxStore ps
   hull `seq` return hull
 
 runQuickhullRecompute :: Unbox.Vector Int -> IO (Unbox.Vector Point)
 runQuickhullRecompute is = do
   let ps = genPoints is
-  let hull = quickhullWith filterMaxRecompute ps
+  let hull = quickhullWithPivots pivots filterMaxRecompute ps
   hull `seq` return hull
 
