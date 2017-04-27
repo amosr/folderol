@@ -98,6 +98,9 @@ benchmark bench
                      , unagi-chan
                      , primitive
                      , ghc-prim
+                     , text
+                     , streaming
+                     , pipes
 
   ghc-options:         -Wall -threaded -O2
 
