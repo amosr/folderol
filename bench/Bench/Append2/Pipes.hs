@@ -17,18 +17,10 @@ runAppend2 in1 in2 out = do
   return i
  where
   go f1 f2 h =
-   let ins  = append (P.fromHandle f1) (P.fromHandle f2)
+   let ins  = (P.fromHandle f1) >> (P.fromHandle f2)
        ins' = counting ins 0
        outs = P.toHandle h
    in ins' P.>-> outs 
-
-  append s1 s2 = do
-   e <- P.next s1
-   case e of
-    Left _end -> s2
-    Right (v,s1') -> do
-     P.yield v
-     append s1' s2
 
   counting s i = do
    e <- P.next s

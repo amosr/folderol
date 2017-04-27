@@ -24,8 +24,8 @@ benches
   gen = do
    let i1 = "/tmp/I1"
    let i2 = "/tmp/I2"
-   IO.writeFile i1 $ unlines $ fmap show $ bigs 1000000
-   IO.writeFile i2 $ unlines $ fmap show $ bigs 2000000
+   IO.writeFile i1 $ unlines $ fmap show $ bigs 100000
+   IO.writeFile i2 $ unlines $ fmap show $ bigs 200000
    return (i1, i2, "/tmp/OUT")
 
   bigs i = [0 :: Int .. i]

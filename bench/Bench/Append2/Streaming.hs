@@ -15,13 +15,5 @@ runAppend2 in1 in2 out = do
   IO.hClose h
   return i
  where
-  go s1 s2 = S.store S.length_ $ append s1 s2
-
-  append s1 s2 = do
-   e <- S.next s1
-   case e of
-    Left _end -> s2
-    Right (v,s1') -> do
-     S.yield v
-     append s1' s2
+  go s1 s2 = S.store S.length_ $ (s1 >> s2)
 
