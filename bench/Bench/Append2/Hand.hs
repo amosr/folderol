@@ -34,7 +34,8 @@ runAppend2Handle in1 in2 out = do
 
 
 -- This version is actually faster for files that fit in memory, probably because it uses larger blocks.
--- Absolute performance isn't too important for this benchmark though...
+-- Absolute performance isn't too important for this benchmark though, and it's more important that the examples all use the same chunking strategy.
+-- (Since the best chunking strategy could be applied to all examples)
 {-
 runAppend2List :: FilePath -> FilePath -> FilePath -> IO Int
 runAppend2List in1 in2 out = do

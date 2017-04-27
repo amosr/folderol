@@ -101,6 +101,10 @@ benchmark bench
                      , text
                      , streaming
                      , pipes
+                     , pipes-concurrency
+                     , pipes-extras
+                     , async
+                     , conduit
 
   ghc-options:         -Wall -threaded -O2
 

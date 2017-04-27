@@ -3,8 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Bench.Quickhull.FolderolFilterMax where
 
-import Bench.Array.Folderol
-
+import Bench.Plumbing
 import Bench.Quickhull.Skeleton
 
 import Folderol
@@ -23,7 +22,7 @@ import System.IO.Unsafe
 filterMax :: Line -> Unbox.Vector Point -> (Point, Unbox.Vector Point)
 filterMax l vec = unsafeDupablePerformIO $ do
  (maxim,(above,())) <- scalarIO $ \snkMaxim -> vectorAtMostIO (Unbox.length vec) $ \snkAbove -> do
-   $$(fuse defaultFuseOptions { verbose = True } $ do
+   $$(fuse defaultFuseOptions $ do
       ins <- source [|| Source.sourceOfVector vec ||]
 
       annot <- map [||\p -> (p, distance p l)||] ins
