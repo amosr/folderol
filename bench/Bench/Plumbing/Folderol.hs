@@ -1,10 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Bench.Plumbing where
+module Bench.Plumbing.Folderol where
 
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
 
 import qualified System.IO as IO
+
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as Char8
 
 import qualified Data.Vector.Mutable as MVector
 import qualified Data.Vector.Unboxed as Unbox
@@ -14,14 +17,14 @@ import Prelude hiding (filter, map)
 import Control.Monad.Primitive
 
 
-sourceLinesOfFile :: FilePath -> Source.Source IO String
+sourceLinesOfFile :: FilePath -> Source.Source IO ByteString.ByteString
 sourceLinesOfFile f = Source.Source
  { Source.init = IO.openFile f IO.ReadMode
  , Source.pull = \h -> do
     e <- IO.hIsEOF h
     case e of
      False -> do
-      l <- IO.hGetLine h
+      l <- Char8.hGetLine h
       return (Just l, h)
      True -> do
       return (Nothing, h)
@@ -29,11 +32,11 @@ sourceLinesOfFile f = Source.Source
     IO.hClose h
  }
 
-sinkFileOfLines :: FilePath -> Sink.Sink IO String
+sinkFileOfLines :: FilePath -> Sink.Sink IO ByteString.ByteString
 sinkFileOfLines f = Sink.Sink
  { Sink.init = IO.openFile f IO.WriteMode
  , Sink.push = \h x -> do
-    IO.hPutStrLn h x
+    Char8.hPutStrLn h x
     return h
  , Sink.done = \h -> do
     IO.hClose h

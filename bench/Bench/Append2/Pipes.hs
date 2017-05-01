@@ -1,25 +1,21 @@
 module Bench.Append2.Pipes where
 
+import Bench.Plumbing.Pipes
+
 import qualified Pipes         as P
-import qualified Pipes.Prelude as P
 import qualified System.IO as IO
 
 runAppend2 :: FilePath -> FilePath -> FilePath -> IO Int
 runAppend2 in1 in2 out = do
-  f1 <- IO.openFile in1 IO.ReadMode
-  f2 <- IO.openFile in2 IO.ReadMode
   h  <- IO.openFile out IO.WriteMode
-  i  <- P.runEffect (go f1 f2 h)
-
-  IO.hClose f1
-  IO.hClose f2
+  i  <- P.runEffect $ go h
   IO.hClose h
   return i
  where
-  go f1 f2 h =
-   let ins  = (P.fromHandle f1) >> (P.fromHandle f2)
+  go h =
+   let ins  = sourceFile in1 >> sourceFile in2
        ins' = counting ins 0
-       outs = P.toHandle h
+       outs = sinkHandle h
    in ins' P.>-> outs 
 
   counting s i = do

@@ -20,7 +20,6 @@ benches
  , bench "Streaming" $ run e Bench.Part2.Streaming.runPart2
  , bgroup "Pipes"
    [ bench "hand-fused" $ run e Bench.Part2.Pipes.runPart2Hand
-   , bench "concurrent" $ run e Bench.Part2.Pipes.runPart2Concurrent
    , bench "arrow" $ run e Bench.Part2.Pipes.runPart2Arrow
    ]
  , bgroup "Conduit"

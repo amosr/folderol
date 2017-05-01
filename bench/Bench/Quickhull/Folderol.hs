@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Bench.Quickhull.Folderol where
 
-import Bench.Plumbing
+import Bench.Plumbing.Folderol
 import Bench.Quickhull.FolderolFilterMax
 import Bench.Quickhull.Skeleton
 

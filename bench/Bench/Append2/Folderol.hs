@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Bench.Append2.Folderol where
 
-import Bench.Plumbing
+import Bench.Plumbing.Folderol
 
 import Folderol
 import Folderol.Splice

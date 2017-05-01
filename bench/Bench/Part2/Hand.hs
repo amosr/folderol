@@ -1,5 +1,7 @@
 module Bench.Part2.Hand where
 
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Char8 as Char8
 import qualified System.IO as IO
 
 runPart2 :: FilePath -> FilePath -> FilePath -> IO (Int, Int)
@@ -18,12 +20,12 @@ runPart2 in1 out1 out2 = do
    case i1' of
     True -> return (c1, c2)
     False -> do
-     l <- IO.hGetLine i1
-     case length l `mod` 2 == 0 of
+     l <- Char8.hGetLine i1
+     case ByteString.length l `mod` 2 == 0 of
       True  -> do
-        IO.hPutStrLn o1 l
+        Char8.hPutStrLn o1 l
         go i1 o1 o2 (c1 + 1) c2
       False -> do
-        IO.hPutStrLn o2 l
+        Char8.hPutStrLn o2 l
         go i1 o1 o2 c1 (c2 + 1)
 

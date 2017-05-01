@@ -11,10 +11,10 @@ import           Criterion.Main
 main :: IO ()
 main
  = defaultMainWith defaultConfig
- [ Bench.Part2.benches ]
- -- [ Bench.Append2.benches ]
- -- [ Bench.Quickhull.benches
- -- , Bench.Array.benches
- -- , Bench.Chan.benches
- -- ]
+ [ Bench.Part2.benches
+ , Bench.Append2.benches
+ , Bench.Quickhull.benches
+ , Bench.Array.benches
+ , Bench.Chan.benches
+ ]
 

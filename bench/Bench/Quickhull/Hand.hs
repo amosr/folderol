@@ -8,6 +8,7 @@ import Bench.Quickhull.HandFilterMax
 import Bench.Quickhull.Skeleton
 import qualified Data.Vector.Unboxed as Unbox
 
+
 -- | Find left-most and right-most pivot points to start algorithm
 -- Assert |xs| >= 1
 {-# INLINE pivots #-}

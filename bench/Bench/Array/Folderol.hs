@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Bench.Array.Folderol where
 
-import Bench.Plumbing
+import Bench.Plumbing.Folderol
 import Bench.Array.Helper
 
 import Folderol

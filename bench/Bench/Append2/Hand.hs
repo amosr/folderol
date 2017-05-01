@@ -1,5 +1,6 @@
 module Bench.Append2.Hand where
 
+import qualified Data.ByteString.Char8 as Char8
 import qualified System.IO as IO
 
 runAppend2Handle :: FilePath -> FilePath -> FilePath -> IO Int
@@ -19,8 +20,8 @@ runAppend2Handle in1 in2 out = do
    case f1' of
     True -> go2 h f2 lns
     False -> do
-     l <- IO.hGetLine f1
-     IO.hPutStrLn h l
+     l <- Char8.hGetLine f1
+     Char8.hPutStrLn h l
      go1 h f1 f2 (lns + 1)
 
   go2 h f2 lns = do
@@ -28,37 +29,7 @@ runAppend2Handle in1 in2 out = do
    case f2' of
     True -> return lns
     False -> do
-     l <- IO.hGetLine f2
-     IO.hPutStrLn h l
+     l <- Char8.hGetLine f2
+     Char8.hPutStrLn h l
      go2 h f2 (lns + 1)
-
-
--- This version is actually faster for files that fit in memory, probably because it uses larger blocks.
--- Absolute performance isn't too important for this benchmark though, and it's more important that the examples all use the same chunking strategy.
--- (Since the best chunking strategy could be applied to all examples)
-{-
-runAppend2List :: FilePath -> FilePath -> FilePath -> IO Int
-runAppend2List in1 in2 out = do
-  f1 <- lines <$> IO.readFile in1
-  f2 <- lines <$> IO.readFile in2
-  h  <- IO.openFile out IO.WriteMode
-  i  <- go1 h f1 f2 0
-  IO.hClose h
-  return i
- where
-
-  go1 h (x:xs) f2 lns = do
-   IO.hPutStrLn h x
-   go1 h xs f2 (lns + 1)
-
-  go1 h [] f2 lns =
-   go2 h f2 lns
-
-  go2 h (x:xs) lns = do
-   IO.hPutStrLn h x
-   go2 h xs (lns + 1)
-
-  go2 _ [] lns =
-   return lns
--}
 
