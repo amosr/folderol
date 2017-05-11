@@ -15,6 +15,8 @@ import qualified Data.Vector.Mutable as MVector
 
 import Control.Monad.Primitive
 
+import qualified Control.Monad.Morph as Morph
+
 
 data Sink m a
  = forall s
@@ -23,6 +25,9 @@ data Sink m a
  , push :: s -> a -> m s
  , done :: s -> m ()
  }
+
+instance Morph.MFunctor Sink where
+ hoist f (Sink i p d) = Sink (f i) (\s a -> f $ p s a) (f . d)
 
 {-# INLINE perform #-}
 perform :: Monad m => (a -> m ()) -> Sink m a

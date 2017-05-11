@@ -7,6 +7,8 @@ import P
 
 import qualified Data.Vector.Generic as Generic
 
+import qualified Control.Monad.Morph as Morph
+
 data Source m a
  = forall s
  . Source
@@ -14,6 +16,9 @@ data Source m a
  , pull :: s -> m (Maybe a, s)
  , done :: s -> m ()
  }
+
+instance Morph.MFunctor Source where
+ hoist f (Source i p d) = Source (f i) (f . p) (f . d)
 
 {-# INLINE sourceRepeat #-}
 sourceRepeat :: Monad m => Maybe a -> Source m a

@@ -22,6 +22,9 @@ library
                      , ghc-prim
                      , vector
                      , primitive
+                     , mmorph
+                     , monad-control
+                     , lifted-async
 
   ghc-options:         -Wall -O2
 

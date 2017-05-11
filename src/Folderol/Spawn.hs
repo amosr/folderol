@@ -1,5 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds #-}
 module Folderol.Spawn where
 
 import qualified Folderol.Source as Source
@@ -14,22 +16,25 @@ import System.IO (IO)
 
 import Control.Concurrent
 
-class Monad m => Spawn m where
- join2 :: m () -> m () -> m ()
- channel :: m (Sink.Sink m a, Source.Source m a)
+import qualified Control.Monad.Morph as Morph
+import qualified Control.Concurrent.Async.Lifted as Async
+import qualified Control.Monad.Trans.Control as Control
+import qualified Control.Monad.IO.Class as MonadIO
 
-instance Spawn IO where
- {-# INLINE join2 #-}
- join2 a b = do
-  ref <- newEmptyMVar
-  _ <- forkFinally a (\_ -> putMVar ref ())
-  b
-  takeMVar ref
+type Spawn m = (Control.MonadBaseControl IO m, MonadIO.MonadIO m)
 
- {-# INLINE channel #-}
- channel = do
-  chan <- newChan
-  return (sink chan, source chan)
+{-# INLINE join2 #-}
+join2 :: Control.MonadBaseControl IO m => m () -> m () -> m ()
+join2 a b = do
+ ((),()) <- Async.concurrently a b
+ return ()
+
+{-# INLINE channel #-}
+channel :: MonadIO.MonadIO m => m (Sink.Sink m a, Source.Source m a)
+channel = do
+  chan <- MonadIO.liftIO newChan
+  let liftS s = Morph.hoist MonadIO.liftIO s
+  return (liftS $ sink chan, liftS $ source chan)
   where
    {-# INLINE sink #-}
    sink q = Sink.Sink
