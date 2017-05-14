@@ -4,6 +4,7 @@ module Test.Folderol.Kernel where
 
 -- Separate the kernels to make viewing Core easier
 import Test.Folderol.Kernel.AppendSelf
+import Test.Folderol.Kernel.Chunk
 import Test.Folderol.Kernel.Cycle
 import Test.Folderol.Kernel.Filter1
 import Test.Folderol.Kernel.FilterMap
@@ -23,6 +24,7 @@ import Hedgehog
 import qualified Hedgehog.Gen as Gen
 import qualified Hedgehog.Range as Range
 import qualified Data.Vector as Vector
+import qualified Data.List   as List
 
 import System.IO
 import           Control.Monad.Trans.Class (MonadTrans(..))
@@ -36,6 +38,42 @@ prop_appendSelf = property $ do
   xs <- forAll genVec
   ys <- lift $ appendSelf xs
   ys === (xs <> xs)
+
+prop_chunk_collectAll :: Property
+prop_chunk_collectAll = property $ do
+  xs <- fmap show <$> forAll genVec
+  ys <- lift $ collectAll xs
+  ys === (Vector.singleton $ mconcat $ Vector.toList xs)
+
+prop_chunk_collect :: Property
+prop_chunk_collect = property $ do
+  xs <- fmap show <$> forAll genVec
+  ys <- lift $ collect100 xs
+  (mconcat $ Vector.toList ys) === (mconcat $ Vector.toList xs)
+
+prop_chunk_slicelines :: Property
+prop_chunk_slicelines = property $ do
+  xs <- fmap show <$> forAll genVec
+  j  <- forAll $ Gen.int $ Range.linear 1 100
+  let oneline = List.unlines $ Vector.toList xs
+  let xx = Vector.fromList $ splits j oneline
+  ys <- lift $ slicelines xx
+  ys === (Vector.fromList $ breaks oneline)
+ where
+  splits _ [] = []
+  splits j xs
+   = let (as,bs) = splitAt j xs
+     in  as : splits j bs
+
+  breaks [] = []
+  breaks xs = breaks0 xs
+
+  breaks0 [] = [""]
+  breaks0 xs
+   = case takeline xs of
+      Nothing -> [xs]
+      Just (a,bs) -> a : breaks0 bs
+   
 
 prop_cycle3 :: Property
 prop_cycle3 = property $ do

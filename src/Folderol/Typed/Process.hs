@@ -39,7 +39,7 @@ import qualified Folderol.Untyped.Name as U
 import qualified Folderol.Untyped.Network as U
 import qualified Folderol.Untyped.Process as U
 
-import P hiding (drop, bool)
+import P hiding (drop, bool, either)
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set

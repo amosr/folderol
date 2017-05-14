@@ -25,6 +25,7 @@ library
                      , mmorph
                      , monad-control
                      , lifted-async
+                     , resourcet
 
   ghc-options:         -Wall -O2
 
@@ -37,9 +38,10 @@ library
                     Folderol.Internal.Haskell
 
                     Folderol.Process.Append
-                    Folderol.Process.Map
+                    Folderol.Process.Chunk
                     Folderol.Process.Filter
                     Folderol.Process.Fold
+                    Folderol.Process.Map
                     Folderol.Process.Zip
                     Folderol.Process
 

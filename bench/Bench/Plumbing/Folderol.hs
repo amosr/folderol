@@ -1,4 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns #-}
 module Bench.Plumbing.Folderol where
 
 import qualified Folderol.Source as Source
@@ -9,6 +10,7 @@ import qualified System.IO as IO
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as Char8
 
+import qualified Data.Vector.Generic as Generic
 import qualified Data.Vector.Mutable as MVector
 import qualified Data.Vector.Unboxed as Unbox
 import qualified Data.Vector.Unboxed.Mutable as MUnbox
@@ -85,4 +87,19 @@ vectorAtMost len f = do
  b   <- f $ Sink.vectorOfChannelAtMost len ref
  a   <- MVector.unsafeRead ref 0
  return (a, b)
+
+-- | SourceOfVector with the branches flipped.
+-- Used for benchmarking.
+-- Originally had this version, but it turns out flipping the branches makes it 25% faster or so,
+-- because this version constructs a loop with the end case in the middle.
+{-# INLINE sourceOfVectorFlip #-}
+sourceOfVectorFlip :: (Monad m, Generic.Vector v a) => v a -> Source.Source m a
+sourceOfVectorFlip !as0
+ = Source.Source 
+ { Source.init = return 0
+ , Source.pull = \ix -> if ix < Generic.length as0
+                 then return (Just $ Generic.unsafeIndex as0 ix, ix + 1)
+                 else return (Nothing, ix)
+ , Source.done = \_  -> return ()
+ }
 

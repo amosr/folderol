@@ -30,7 +30,7 @@ runFilterFlip :: Unbox.Vector Int -> IO (Unbox.Vector Int)
 runFilterFlip vec = do
  (above,()) <- vectorAtMostIO (Unbox.length vec) $ \snkAbove -> do
   $$(fuse defaultFuseOptions $ do
-     ins   <- source [|| Source.sourceOfVectorFlip vec ||]
+     ins   <- source [|| sourceOfVectorFlip vec ||]
      above <- filter [||(>0)||] ins
      sink above [|| snkAbove ||])
 
