@@ -40,4 +40,4 @@ benches
    ]
 
 sized' :: (Vector.Vector Int -> IO ()) -> [Benchmark]
-sized' f = sized (f . Vector.enumFromTo 0) [6]
+sized' f = sized (f . Vector.enumFromTo 0) [1000000]

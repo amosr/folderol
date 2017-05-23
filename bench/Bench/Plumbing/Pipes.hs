@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 module Bench.Plumbing.Pipes where
@@ -7,6 +8,8 @@ import qualified Data.ByteString.Char8 as Char8
 import qualified System.IO as IO
 import qualified Pipes as P
 import           Control.Monad.IO.Class
+
+import qualified Data.Vector.Unboxed as Unbox
 
 
 {-# INLINE sourceFile #-}
@@ -25,7 +28,18 @@ sourceFile fp = do
       go h
      True -> do
       return ()
-   
+
+{-# INLINE sourceVector #-}
+sourceVector :: Unbox.Unbox a => Unbox.Vector a -> P.Producer' a IO ()
+sourceVector !v = go 0
+ where
+  go ix
+   | ix < Unbox.length v = do
+      P.yield (Unbox.unsafeIndex v ix)
+      go (ix + 1)
+   | otherwise =
+      return ()
+
 
 {-# INLINE sinkHandle #-}
 sinkHandle :: MonadIO m => IO.Handle -> P.Consumer' ByteString.ByteString m r

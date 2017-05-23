@@ -60,5 +60,5 @@ benches
 
  ]
  where
-  sized' f = sizedWithVector f [7]
+  sized' f = sizedWithVector f [10000000]
 
