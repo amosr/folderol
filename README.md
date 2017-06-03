@@ -12,6 +12,11 @@ By default we only allow one process, which means no unbounded buffers,
 
 Sometimes you do want unbounded buffers though, in which case you can set the maximum process count higher.
 
+## Paper and proof
+We have written a paper about the fusion method, which is available at http://cse.unsw.edu.au/~amosr/papers/merges.pdf.
+The core fusion algorithm has been proven sound in Coq: https://github.com/amosr/merges/tree/master/proof.
+
+
 ## Doing two things at once
 
 Sometimes you need to do multiple things to the same input.
