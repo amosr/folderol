@@ -8,13 +8,15 @@ import qualified Bench.Part2.Hand
 import qualified Bench.Part2.Pipes
 import qualified Bench.Part2.Streaming
 
+import           Bench.Sized
+
 import           Criterion
 
 import qualified System.IO as IO
 
 benches :: Benchmark
 benches
- = env gen $ \e -> bgroup "Part2"
+ = bgroup "Part2" $ sizes $ \e ->
  [ bench "Hand"      $ run e Bench.Part2.Hand.runPart2
  , bench "Folderol"  $ run e Bench.Part2.Folderol.runPart2
  , bench "Streaming" $ run e Bench.Part2.Streaming.runPart2
@@ -27,13 +29,21 @@ benches
    ]
  ]
  where
+  sizes f
+   = fmap (goSize f) $ sizedExp [1..7]
+
+  goSize f i
+   = env (gen i) 
+   (\v -> bgroup (showSize i) (f v))
+
   run (in1,out1,out2) f = whnfIO $ do
    (i,j) <- f in1 out1 out2
-   if i /= 909090 && j /= 90911 then fail ("error:" ++ show (i,j)) else return ()
+   i `seq` j `seq` return ()
+   -- if i /= 909090 && j /= 90911 then fail ("error:" ++ show (i,j)) else return ()
 
-  gen = do
+  gen i = do
    let i1 = "/tmp/folderol-bench-Part2-IN"
-   IO.writeFile i1 $ unlines $ fmap show $ bigs 1000000
+   IO.writeFile i1 $ unlines $ fmap show $ bigs i
    let o = "/tmp/folderol-bench-Part2-OUT"
    return (i1, o ++ "1", o ++ "2")
 

@@ -99,6 +99,7 @@ benchmark bench
                      , base
                      , transformers
                      , criterion
+                     , deepseq
                      , vector
                      , unagi-chan
                      , primitive

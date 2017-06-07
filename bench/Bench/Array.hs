@@ -60,5 +60,6 @@ benches
 
  ]
  where
-  sized' f = sizedWithVector f [10000000]
+  -- sized' f = sizedWithVector f [10000000]
+  sized' f = sizedWithVector f $ sizedExp [1..7]
 
