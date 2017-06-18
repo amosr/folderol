@@ -16,11 +16,11 @@ runCompressor !xs = do
    | ix >= Unbox.length xs
    = return ()
    | otherwise = do
-    let x = Unbox.unsafeIndex xs ix
-    let square = x * x
-    let avg'  = expAvg avg square
-    let root  = clipRoot avg'
-    let out   = x * root
+    let !x = Unbox.unsafeIndex xs ix
+    let !square = x * x
+    let !avg'  = expAvg avg square
+    let !root  = clipRoot avg'
+    let !out   = x * root
     MUnbox.unsafeWrite mv ix out
     go mv (ix + 1) avg'
 
@@ -34,12 +34,12 @@ runCompressorLop !xs = do
    | ix >= Unbox.length xs
    = return ()
    | otherwise = do
-    let x      = Unbox.unsafeIndex xs ix
-    let x'     = lopass lop x
-    let square = x' * x'
-    let avg'   = expAvg avg square
-    let root   = clipRoot avg'
-    let out    = x' * root
+    let !x      = Unbox.unsafeIndex xs ix
+    let !x'     = lopass lop x
+    let !square = x' * x'
+    let !avg'   = expAvg avg square
+    let !root   = clipRoot avg'
+    let !out    = x' * root
     MUnbox.unsafeWrite mv ix out
     go mv (ix + 1) avg' x'
 
