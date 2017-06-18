@@ -4,6 +4,7 @@ import qualified Bench.Part2
 import qualified Bench.Array
 import qualified Bench.Chan
 import qualified Bench.Quickhull
+import qualified Bench.Audio
 
 import           Criterion.Main
 
@@ -16,5 +17,6 @@ main
  , Bench.Quickhull.benches
  , Bench.Array.benches
  , Bench.Chan.benches
+ , Bench.Audio.benches
  ]
 

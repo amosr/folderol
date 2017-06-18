@@ -21,7 +21,7 @@ benches
 
  , bgroup "Filter" 
    [ bgroup "Folderol" $ sized' Bench.Array.Folderol.runFilter
-   , bgroup "Folderol-flip" $ sized' Bench.Array.Folderol.runFilterFlip
+   -- , bgroup "Folderol-flip" $ sized' Bench.Array.Folderol.runFilterFlip
    -- , bgroup "Folderol-grow" $ sized' Bench.Array.Folderol.runFilterGrow
    , bgroup "Vector" $ sized' Bench.Array.Vector.runFilter
    ]
@@ -61,5 +61,5 @@ benches
  ]
  where
   -- sized' f = sizedWithVector f [10000000]
-  sized' f = sizedWithVector f $ sizedExp [1..7]
+  sized' f = sizedWithVector f $ sizedExp [1..8]
 

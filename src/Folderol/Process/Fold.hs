@@ -33,3 +33,27 @@ fold k z as = Proc.proc "fold" $ do
 
   return (l0 z, o0)
 
+postscanl :: (Monad m) => Haskell.TExpQ (b -> a -> b) -> Haskell.TExpQ b -> Channel a -> Network m (Channel b)
+postscanl k z as = Proc.proc "fold" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
+
+  l0 <- Proc.label1
+  l1 <- Proc.label2
+  l2 <- Proc.label1
+  l3 <- Proc.label0
+
+  Proc.instr1 l0 $ \s ->
+    Proc.pull i0 (l1 s) l3
+
+  Proc.instr2 l1 $ \s x ->
+    Proc.push o0 [||$$k $$s $$x||] (l2 [||$$k $$s $$x||])
+
+  Proc.instr1 l2 $ \s ->
+    Proc.drop i0 (l0 s)
+
+  Proc.instr0 l3 $
+    Proc.done
+
+  return (l0 z, o0)
+

@@ -119,3 +119,28 @@ mergeBy f as bs = Proc.proc "mergeBy" $ do
 merge :: (Monad m, Ord a) => Channel a -> Channel a -> Network m (Channel a)
 merge = mergeBy [||(<=)||]
 
+
+z :: Monad m => Channel a -> Haskell.TExpQ a -> Network m (Channel a)
+z as init = Proc.proc "z" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
+
+  l0 <- Proc.label1
+  l1 <- Proc.label2
+  l2 <- Proc.label1
+  l3 <- Proc.label0
+
+  Proc.instr1 l0 $ \x ->
+    Proc.pull i0 (l1 x) l3
+
+  Proc.instr2 l1 $ \x y ->
+    Proc.push o0 x (l2 y)
+
+  Proc.instr1 l2 $ \y ->
+    Proc.drop i0 (l0 y)
+
+  Proc.instr0 l3 $
+    Proc.done
+
+  return (l0 init, o0)
+

@@ -5,6 +5,8 @@ module Bench.Array.Vector where
 import Bench.Array.Helper
 
 import qualified Data.Vector.Unboxed as Unbox
+import qualified Data.Vector         as Vector
+import System.IO
 
 import Prelude hiding (filter)
 
@@ -80,3 +82,18 @@ runMapPartitionMap2Unfused ins = do
  let above' = Unbox.map expensive2 above
  below' `seq` above' `seq` return (below', above')
 
+runTraverse :: Vector.Vector Int -> Maybe (Vector.Vector Int)
+runTraverse ins = traverse go ins
+ where
+  go i | i > 0
+       = Just i
+       | otherwise
+       = Nothing
+
+runMapM :: Vector.Vector Int -> Maybe (Vector.Vector Int)
+runMapM ins = sequence $ Vector.map go ins
+ where
+  go i | i > 0
+       = Just i
+       | otherwise
+       = Nothing
