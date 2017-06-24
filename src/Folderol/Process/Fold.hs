@@ -41,18 +41,22 @@ postscanl k z as = Proc.proc "fold" $ do
   l0 <- Proc.label1
   l1 <- Proc.label2
   l2 <- Proc.label1
-  l3 <- Proc.label0
+  l3 <- Proc.label1
+  l4 <- Proc.label0
 
   Proc.instr1 l0 $ \s ->
-    Proc.pull i0 (l1 s) l3
+    Proc.pull i0 (l1 s) l4
 
   Proc.instr2 l1 $ \s x ->
-    Proc.push o0 [||$$k $$s $$x||] (l2 [||$$k $$s $$x||])
+    Proc.jump (l2 [||$$k $$s $$x||])
 
   Proc.instr1 l2 $ \s ->
+    Proc.push o0 s (l3 s)
+
+  Proc.instr1 l3 $ \s ->
     Proc.drop i0 (l0 s)
 
-  Proc.instr0 l3 $
+  Proc.instr0 l4 $
     Proc.done
 
   return (l0 z, o0)

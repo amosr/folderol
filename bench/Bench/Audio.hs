@@ -27,7 +27,7 @@ benches
  ]
  ]
  where
-  sized' f = sizedWithVector (f . Unbox.map fromIntegral) $ sizedExp [6..8]
+  sized' f = sizedWithVector (f . Unbox.map fromIntegral) $ sizedExp [6..6]
   -- sized' f = sizedWithVector f [16000000]
 
 

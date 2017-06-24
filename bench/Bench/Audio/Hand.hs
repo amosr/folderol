@@ -22,7 +22,8 @@ runCompressor !xs = do
     let !root  = clipRoot avg'
     let !out   = x * root
     MUnbox.unsafeWrite mv ix out
-    go mv (ix + 1) avg'
+    let !avg'2  = expAvg avg square
+    go mv (ix + 1) avg'2
 
 runCompressorLop :: Unbox.Vector Double -> IO (Unbox.Vector Double)
 runCompressorLop !xs = do
@@ -41,5 +42,5 @@ runCompressorLop !xs = do
     let !root   = clipRoot avg'
     let !out    = x' * root
     MUnbox.unsafeWrite mv ix out
-    go mv (ix + 1) avg' x'
-
+    let !avg'2  = expAvg avg square
+    go mv (ix + 1) avg'2 x'
