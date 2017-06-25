@@ -1,14 +1,18 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE PatternGuards #-}
 module Folderol.Untyped.Process where
 
 import Folderol.Untyped.Name
 
 import P
 
-import Data.Map (Map)
-import Data.Set (Set)
+import qualified Data.List as List
+import           Data.Map (Map)
+import qualified Data.Map as Map
+import           Data.Set (Set)
+import           Data.String (String)
 
 import qualified Folderol.Internal.Pretty as Pretty
 import Folderol.Internal.Pretty (pretty, (<+>), (<#>))
@@ -60,40 +64,62 @@ outlabels = \case
   -> []
 
 instance Pretty.Pretty Process where
- pretty (Process name ins outs label instrs)
+ pretty p@(Process name ins outs label instrs)
   = "process " <> Pretty.text name <#> 
   ( Pretty.indent 2
   $ Pretty.vsep
   [ "inputs:  " <> Pretty.set ins
   , "outputs: " <> Pretty.set outs
-  , "initial: " <> pretty label
-  , "instructions:" <#>
-    ( Pretty.indent 2
-    $ Pretty.vsep 
-    $ Pretty.mapEq instrs)
+  , "initial: " <> prettyNext lns label
+  , "instructions:" <#> pInstrs
   ])
+  where 
+   lns = processLabelShortNames p
 
-instance Pretty.Pretty Info where
- pretty (Info bs i)
-  = "[" <> Pretty.set bs <> "]." <#> Pretty.indent 2 (pretty i)
+   pInstrs
+    = Pretty.indent 2
+    $ Pretty.vsep
+    $ fmap (\(k,v) -> prettyLabel lns k <+> "=" <+> prettyInfo lns v)
+    $ Map.toList instrs
 
-instance Pretty.Pretty Instruction where
- pretty = \case
+prettyInfo :: Map Label String -> Info -> Pretty.Doc b
+prettyInfo lns (Info bs i)
+ | null bs
+ = prettyInstruction lns i
+ | otherwise
+ = Pretty.indent 0 ("[" <> Pretty.set bs <> "]." <#> prettyInstruction lns i)
+
+prettyInstruction :: Map Label String -> Instruction -> Pretty.Doc b
+prettyInstruction lns = \case
   I'Pull c v n n'
-   -> "pull" <+> pretty c <+> pretty v <+> pretty n <+> pretty n'
+   -> "pull" <+> pretty c <+> pretty v <+> prettyNext lns n <+> prettyNext lns n'
   I'Push c x n
-   -> "push" <+> pretty c <+> "(" <> pretty x <> ")" <+> pretty n
+   -> "push" <+> pretty c <+> "(" <> pretty x <> ")" <#> Pretty.indent 2 (prettyNext lns n)
   I'Jump n
-   -> "jump" <+> pretty n
+   -> "jump" <+> prettyNext lns n
   I'Bool x n n'
-   -> "bool" <+> "(" <> pretty x <> ")" <+> pretty n <+> pretty n'
+   -> "bool" <+> "(" <> pretty x <> ")" <#> Pretty.indent 2 (prettyNext lns n <+> prettyNext lns n')
   I'Drop c n
-   -> "drop" <+> pretty c <+> pretty n
+   -> "drop" <+> pretty c <+> prettyNext lns n
   I'Done
    -> "done"
-  
 
-instance Pretty.Pretty Next where
- pretty (Next l u)
-  = pretty l <> Pretty.list (Pretty.mapEq u)
+prettyNext :: Map Label String -> Next -> Pretty.Doc b
+prettyNext lns (Next l u)
+ | null u
+ = prettyLabel lns l
+ | otherwise
+ = prettyLabel lns l <> Pretty.list (Pretty.mapEq u)
+
+prettyLabel :: Map Label String -> Label -> Pretty.Doc b
+prettyLabel lns l
+ | Just s <- Map.lookup l lns = Pretty.text s
+ | otherwise = "??"
+
+processLabelShortNames :: Process -> Map Label String
+processLabelShortNames (Process _ _ _ _ instrs) = names
+ where
+  padlen = length $ show $ length instrs
+  names = Map.fromList $ List.zipWith namedLabel [0 :: Int ..] $ Map.keys instrs
+  namedLabel i l = (l, Pretty.padl padlen ' ' ("L" <> show i))
 

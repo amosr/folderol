@@ -31,7 +31,7 @@ prettyNetworkSummary = go . networkSummary
   = Pretty.vsep $ fmap (pNode summary $ totals s) s
 
  pNode summary (i,j) (Node ins op proc outs)
-  = Pretty.text (padr i ' ' $ pChans ins) <> "->" <> Pretty.text (padc j '-' op) <> "-> " <> Pretty.text (pChans outs)
+  = Pretty.text (Pretty.padr i ' ' $ pChans ins) <> "->" <> Pretty.text (Pretty.padc j '-' op) <> "-> " <> Pretty.text (pChans outs)
   <> Pretty.line
   <> case proc of 
       Just p -> Pretty.indent i (prettyProcessSummary summary p)
@@ -112,14 +112,7 @@ networkShortNames (NetworkGraph _ _ _ chans) = names
  where
   padlen = length $ show $ length chans
   names = Map.fromList $ List.zipWith namedChan [0 :: Int ..] $ chans
-  namedChan i c = (c,  padl padlen ' ' ("$" <> show i))
-
-processLabelShortNames :: Process -> Map Label String
-processLabelShortNames (Process _ _ _ _ instrs) = names
- where
-  padlen = length $ show $ length instrs
-  names = Map.fromList $ List.zipWith namedLabel [0 :: Int ..] $ Map.keys instrs
-  namedLabel i l = (l, padl padlen ' ' ("L" <> show i))
+  namedChan i c = (c,  Pretty.padl padlen ' ' ("$" <> show i))
 
 data Summary
  = Summary
@@ -134,15 +127,4 @@ data Node
  , opProc   :: Maybe Process
  , outputs  :: [String]
  }
-
-padl :: Int -> Char -> String -> String
-padl l c xs = List.replicate (l - length xs) c <> xs
-
-padr :: Int -> Char -> String -> String
-padr l c xs = xs <> List.replicate (l - length xs) c
-
-padc :: Int -> Char -> String -> String
-padc l c xs
- = let lxs = fromIntegral (l - length xs) / 2 :: Double
-   in List.replicate (truncate lxs) c <> xs <> List.replicate (ceiling lxs) c
 
