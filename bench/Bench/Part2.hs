@@ -7,6 +7,7 @@ import qualified Bench.Part2.Folderol
 import qualified Bench.Part2.Hand
 import qualified Bench.Part2.Pipes
 import qualified Bench.Part2.Streaming
+import qualified Bench.Part2.Vector
 
 import           Bench.Sized
 
@@ -19,6 +20,7 @@ benches
  = bgroup "Part2" $ sizes $ \e ->
  [ bench "Hand"      $ run e Bench.Part2.Hand.runPart2
  , bench "Folderol"  $ run e Bench.Part2.Folderol.runPart2
+ , bench "Vector"    $ run e Bench.Part2.Vector.runPart2
  , bench "Streaming" $ run e Bench.Part2.Streaming.runPart2
  , bgroup "Pipes"
    [ bench "hand-fused" $ run e Bench.Part2.Pipes.runPart2Hand
@@ -30,7 +32,7 @@ benches
  ]
  where
   sizes f
-   = fmap (goSize f) $ sizedExp [1..7]
+   = fmap (goSize f) $ sizedExp [6..6]
 
   goSize f i
    = env (gen i) 

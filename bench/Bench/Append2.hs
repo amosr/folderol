@@ -7,6 +7,7 @@ import qualified Bench.Append2.Folderol
 import qualified Bench.Append2.Hand
 import qualified Bench.Append2.Pipes
 import qualified Bench.Append2.Streaming
+import qualified Bench.Append2.Vector
 
 import           Bench.Sized
 
@@ -19,13 +20,15 @@ benches
  = bgroup "Append2" $ sizes $ \e ->
  [ bench "Hand"      $ run e Bench.Append2.Hand.runAppend2Handle
  , bench "Folderol"  $ run e Bench.Append2.Folderol.runAppend2
+ , bench "Vector"    $ run e Bench.Append2.Vector.runAppend2
+ , bench "Vector-multi" $ run e Bench.Append2.Vector.runAppend2MultiPass
  , bench "Streaming" $ run e Bench.Append2.Streaming.runAppend2
  , bench "Pipes"     $ run e Bench.Append2.Pipes.runAppend2
  , bench "Conduit"   $ run e Bench.Append2.Conduit.runAppend2
  ]
  where
   sizes f
-   = fmap (goSize f) $ sizedExp [1..7]
+   = fmap (goSize f) $ sizedExp [6..6]
 
   goSize f i
    = env (gen i) 
