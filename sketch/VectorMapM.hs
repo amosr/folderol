@@ -15,7 +15,7 @@ main = do
 
 checkNum :: Int -> Either String Int
 checkNum i
- | i > 10^15 == 0
+ | i > 10^15
  = Left "Number too big"
  | otherwise
  = Right i
