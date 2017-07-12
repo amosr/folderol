@@ -10,11 +10,8 @@ import Control.DeepSeq
 sizedWithVector :: (Generic.Vector v Int, NFData (v Int)) => (v Int -> IO a) -> [Int] -> [Benchmark]
 sizedWithVector f = fmap run 
  where
-  shittyRandom i
-   = ((i * 12379 `mod` 14289) - 7000) * (i `mod` 5219)
-  
   run n
-   = env (return $ Generic.map shittyRandom $ Generic.enumFromTo 0 n) (\v -> bench (showSize n) $ whnfIO $ f v)
+   = env (return $ randomVector n) (\v -> bench (showSize n) $ whnfIO $ f v)
 
 {-# INLINE sized #-}
 sized :: (Int -> IO a) -> [Int] -> [Benchmark]
@@ -23,6 +20,13 @@ sized f sizes
    sizes
  where
   runBench i = bench (showSize i) $ whnfIO $ f i
+
+randomVector :: Generic.Vector v Int => Int -> v Int
+randomVector n
+ = Generic.map shittyRandom $ Generic.enumFromTo 0 n
+ where
+  shittyRandom i = ((i * 12379 `mod` 14289) - 7000) * (i `mod` 5219)
+
 
 sizedExp :: [Int] -> [Int]
 sizedExp = fmap (10^)

@@ -15,6 +15,7 @@ benches
  = bgroup "PartitionAppend"
  [ bgroup "Folderol-chan" $ sized' Bench.PartitionAppend.Folderol.runPartAppChan
  , bgroup "Folderol-2ix" $ sized' Bench.PartitionAppend.Folderol.runPartApp2ix
+ , bgroup "Folderol-2kernel" $ sized' Bench.PartitionAppend.Folderol.runPartApp2kernel
  , bgroup "Vector"   $ sized' Bench.PartitionAppend.Vector.runPartApp
  , bgroup "Vector-unfused" $ sized' Bench.PartitionAppend.Vector.runPartAppUnfused
  ]
