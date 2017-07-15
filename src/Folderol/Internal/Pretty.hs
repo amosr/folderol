@@ -4,7 +4,7 @@
 module Folderol.Internal.Pretty
  ( module Pretty
  , set
- , mapEq
+ , mapEq, mapEq'
  , padl, padc, padr
  ) where
 
@@ -25,10 +25,14 @@ set
  = hsep . fmap pretty . Set.toList
 
 mapEq :: (Pretty k, Pretty v) => Map k v -> [Doc b]
-mapEq = fmap prettyInstr . Map.toList
+mapEq = mapEq' pretty pretty
+
+mapEq' :: (k -> Doc b) -> (v -> Doc b) -> Map k v -> [Doc b]
+mapEq' pk pv = fmap prettyInstr . Map.toList
  where
   prettyInstr (k,v)
-    = pretty k <+> "=" <+> pretty v
+    = pk k <+> "=" <+> pv v
+
 
 padl :: Int -> Char -> String -> String
 padl l c xs = List.replicate (l - length xs) c <> xs

@@ -70,6 +70,12 @@ library
                     Folderol.Untyped.Transform.FuseNetwork
                     Folderol.Untyped.Transform.Minimise
 
+                    Folderol.Tomorrow.Name
+                    Folderol.Tomorrow.Exp
+                    Folderol.Tomorrow.S
+                    Folderol.Tomorrow.ProcNondet
+                    Folderol.Tomorrow.Proc
+
 test-suite test
   type: exitcode-stdio-1.0
   main-is: test.hs
