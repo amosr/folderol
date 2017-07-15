@@ -118,7 +118,7 @@ copy1'jmp ci co = Top
     (Jump $ go 0)
  }
  where
-  go i = Label ("go" <> show i)
+  go i = Label ("go" <> show (i :: Int))
   buf = Var (unChannel ci)
   bin m p1 p2 = Message (Binary m p1 p2)
   una m p1    = Message (Unary m p1)

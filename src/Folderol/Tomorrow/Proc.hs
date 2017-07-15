@@ -102,7 +102,7 @@ cross1P :: (Ord m1, Ord m2, Ord l1, Ord l2, Message m1 m2) => Set.Set Channel ->
 cross1P cs p q = case p of
  Message m ->
   case crossMessage cs m q of
-   CrossMessageOk p    -> Message p
+   CrossMessageOk p'   -> Message p'
    CrossMessageFailure -> Fail
  p1 :+ p2 ->
   crossP cs p1 q `choice` crossP cs p2 q
@@ -120,8 +120,8 @@ crossP :: (Ord m1, Ord m2, Ord l1, Ord l2, Message m1 m2) => Set.Set Channel -> 
 crossP cs p q = cross1P cs p q `choice` swaplabels (cross1P cs q p)
 
 crossTails :: (Ord m1, Ord m2, Ord l1, Ord l2, Message m1 m2, Pretty.Pretty m1, Pretty.Pretty m2, Pretty.Pretty l1, Pretty.Pretty l2) => Set.Set Channel -> Tails m1 m2 l1 -> Tails m1 m2 l2 -> Tails m1 m2 Label
-crossTails cs (Tails t1 p1) (Tails t2 p2)
- = let (t,p) = runS (Label . show) (go $ crossP cs p1 p2)
+crossTails cs (Tails t1 p01) (Tails t2 p02)
+ = let (t,p) = runS (Label . show) (go $ crossP cs p01 p02)
        t'    = fmap (\(v,k') -> (v, Pretty.pretty k')) t
    in Tails t' p
  where

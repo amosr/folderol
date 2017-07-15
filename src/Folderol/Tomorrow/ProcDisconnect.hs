@@ -122,7 +122,7 @@ dcross1P :: (Ord l1, Ord l2) => Set.Set Channel -> P M1 M2 l1 -> P M1 M2 l2 -> P
 dcross1P cs p q = case p of
  Message m ->
   case dcrossM cs m q of
-   Just p    -> p
+   Just p'   -> p'
    Nothing -> Fail
  p1 :+ p2 ->
   dcrossP cs p1 q `choice` dcrossP cs p2 q
@@ -142,9 +142,9 @@ dcrossP cs (Jump l) q = Jump (Jump l, q, cs)
 dcrossP cs p (Jump l') = Jump (p, Jump l', cs)
 dcrossP cs p q = dcross1P cs p q `choice` maplabels (\(a,b,c) -> (b,a,c)) (dcross1P cs q p)
 
-dcrossTails :: (Ord l1, Ord l2, Pretty.Pretty l1, Pretty.Pretty l2) => Set.Set Channel -> Tails M1 M2 l1 -> Tails M1 M2 l2 -> Tails M1 M2 Label
-dcrossTails cs (Tails t1 p1) (Tails t2 p2)
- = let (t,p) = runS (Label . show) (go $ dcrossP cs p1 p2)
+dcrossTails :: (Ord l1, Ord l2) => Set.Set Channel -> Tails M1 M2 l1 -> Tails M1 M2 l2 -> Tails M1 M2 Label
+dcrossTails cs (Tails t1 p01) (Tails t2 p02)
+ = let (t,p) = runS (Label . show) (go $ dcrossP cs p01 p02)
        t'    = fmap (\(v,_) -> (v, mempty)) t
    in Tails t' p
  where
@@ -169,7 +169,7 @@ dcrossTails cs (Tails t1 p1) (Tails t2 p2)
    | otherwise
    = p
 
-dcrossTop :: (Ord l1, Ord l2, Pretty.Pretty l1, Pretty.Pretty l2) => Top M1 M2 l1 -> Top M1 M2 l2 -> Top M1 M2 Label
+dcrossTop :: (Ord l1, Ord l2) => Top M1 M2 l1 -> Top M1 M2 l2 -> Top M1 M2 Label
 dcrossTop t1 t2
  = let shared = Set.intersection (topChans t1) (topChans t2)
        outs   = Set.union (topOuts t1) (topOuts t2)
@@ -194,7 +194,6 @@ copy1 ci co = Top
   buf = Var (unChannel ci)
   bin m p1 p2 = Message (Binary m p1 p2)
   una m p1    = Message (Unary m p1)
-  r c x p1 p2 = bin (Read c x) p1 p2
 
 copy2' :: Top M1 M2 Label
 copy2' = dcrossTop (copy1 (Channel "a") (Channel "b")) (copy1 (Channel "b") (Channel "c"))
