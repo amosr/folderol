@@ -75,6 +75,7 @@ library
                     Folderol.Tomorrow.S
                     Folderol.Tomorrow.ProcNondet
                     Folderol.Tomorrow.Proc
+                    Folderol.Tomorrow.ProcFinite
 
 test-suite test
   type: exitcode-stdio-1.0
