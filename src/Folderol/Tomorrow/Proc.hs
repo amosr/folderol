@@ -14,7 +14,6 @@ import qualified Folderol.Internal.Pretty as Pretty
 
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Control.Monad.Trans.State
 
 class Message m1 m2 where
  crossMessage :: Set.Set Channel -> M m1 m2 l1 -> P m1 m2 l2 -> CrossMessage m1 m2 l1 l2
@@ -87,14 +86,17 @@ data Top m1 m2 l = Top
 topChans :: Top m1 m2 l -> Set.Set Channel
 topChans t = Set.union (topIns t) (topOuts t)
 
-swaplabels :: P m1 m2 (a,b) -> P m1 m2 (b,a) 
-swaplabels p = case p of
- Message (Unary m p')     -> Message $ Unary m $ swaplabels p'
- Message (Binary m p1 p2) -> Message $ Binary m (swaplabels p1) (swaplabels p2)
- p1 :+ p2                 -> swaplabels p1 :+ swaplabels p2
- Jump (a,b)               -> Jump (b,a)
+maplabels :: (a -> b) -> P m1 m2 a -> P m1 m2 b
+maplabels f p = case p of
+ Message (Unary m p')     -> Message $ Unary m $ maplabels f p'
+ Message (Binary m p1 p2) -> Message $ Binary m (maplabels f p1) (maplabels f p2)
+ p1 :+ p2                 -> maplabels f p1 :+ maplabels f p2
+ Jump a                   -> Jump $ f a
  Fail                     -> Fail
  Done                     -> Done
+
+swaplabels :: P m1 m2 (a,b) -> P m1 m2 (b,a) 
+swaplabels = maplabels (\(a,b) -> (b,a))
 
 cross1P :: (Ord m1, Ord m2, Ord l1, Ord l2, Message m1 m2) => Set.Set Channel -> P m1 m2 l1 -> P m1 m2 l2 -> P m1 m2 (P m1 m2 l1, P m1 m2 l2)
 cross1P cs p q = case p of

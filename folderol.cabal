@@ -76,6 +76,7 @@ library
                     Folderol.Tomorrow.ProcNondet
                     Folderol.Tomorrow.Proc
                     Folderol.Tomorrow.ProcFinite
+                    Folderol.Tomorrow.ProcDisconnect
 
 test-suite test
   type: exitcode-stdio-1.0

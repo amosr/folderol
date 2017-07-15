@@ -1,4 +1,4 @@
--- Processes generalised by message type / message primitives
+-- Processes with finite streams
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude #-}
@@ -77,9 +77,9 @@ instance Message M1 M2 where
     , c == c'
     = CrossMessageOk (SendClose c `Unary` Jump (p2,q'))
     | Set.member c cs
-    , Message (Binary (Read c' _x') q1 q2) <- q
+    , Message (Binary (Read c' x') q1 q2) <- q
     , c == c'
-    = CrossMessageOk (Binary (Read c x) (Jump (p1,q1)) (Jump (p2,q2)))
+    = CrossMessageOk (Binary (Read c x) (Set x' (EVar x) `msg1` Jump (p1,q1)) (Jump (p2,q2)))
     | Set.member c cs
     = CrossMessageFailure
     | otherwise
