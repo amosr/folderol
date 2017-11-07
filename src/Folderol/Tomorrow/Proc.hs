@@ -63,7 +63,42 @@ choice p q
    , mp == mq
    = Message $ Binary mp (choice p1 q1) (choice p2 q2)
    | otherwise
-   = p :+ q
+   = simpC (p :+ q)
+
+simpC :: (Eq l, Eq m1, Eq m2) => P m1 m2 l -> P m1 m2 l
+simpC p
+ = case takeChoice p of
+    [] -> p
+    (p0:ps) -> go [p0] ps
+ where
+  makeChoices [] = p
+  makeChoices (p:ps) = foldl (:+) p ps
+
+  go ps [] = makeChoices ps
+  go seen (p : later) =
+    let seen' = insert p seen
+    in  go seen' later
+
+  insert p [] = [p]
+  insert p (s:seen)
+   | Just p' <- merge p s
+   = p' : seen
+   | otherwise
+   = s : insert p seen
+
+  merge p q
+   | p == q
+   = Just p
+   | Message (Unary mp p') <- p
+   , Message (Unary mq q') <- q
+   , mp == mq
+   = Just $ Message (Unary mp $ choice p' q')
+   | Message (Binary mp p1 p2) <- p
+   , Message (Binary mq q1 q2) <- q
+   , mp == mq
+   = Just $ Message (Binary mp (choice p1 q1) (choice p2 q2))
+   | otherwise
+   = Nothing
 
 -- Process with jump definitions
 data Tails m1 m2 l

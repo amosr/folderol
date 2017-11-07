@@ -26,14 +26,14 @@ data M1
  | SendClose Channel
  -- I am not going to read from this any more
  | Disconnect Channel
- -- Is anybody listening to what I'm saying?
- | LineCheck Channel
  | Set  Var     Exp
  deriving (Eq, Ord, Show)
 
 -- Binary messages
 data M2
  = Read Channel Var
+ -- Is anybody listening to what I'm saying?
+ | LineCheck Channel
  deriving (Eq, Ord, Show)
 
 instance Pretty.Pretty M1 where
@@ -41,12 +41,12 @@ instance Pretty.Pretty M1 where
   SendValue c e -> "send-value " <> Pretty.pretty c <> " " <> Pretty.pretty e
   SendClose c -> "send-close " <> Pretty.pretty c
   Disconnect c -> "disconnect " <> Pretty.pretty c
-  LineCheck  c -> "line-check " <> Pretty.pretty c
   Set  x e -> Pretty.pretty x <> " := " <> Pretty.pretty e
 
 instance Pretty.Pretty M2 where
  pretty = \case
   Read c x -> "read " <> Pretty.pretty c <> " -> " <> Pretty.pretty x
+  LineCheck  c -> "line-check " <> Pretty.pretty c
 
 type L' l1 l2 = (P M1 M2 l1, P M1 M2 l2, Set.Set Channel)
 dcrossM :: Set.Set Channel -> M M1 M2 l1 -> P M1 M2 l2 -> Maybe (P M1 M2 (L' l1 l2))
@@ -85,16 +85,6 @@ dcrossM cs p0 q
     | otherwise
     = Just (Disconnect c `msg1` j' p)
 
-   -- Line-check guard is global, so we can't know whether it succeeds
-   -- 1. Just because the other process has disconnected doesn't mean the rest of the world has.
-   -- 2. Send channels are uniquely owned, so the other process can't have a line-check.
-   --    (Two sends on same channel is outlawed for same reason)
-   unary (LineCheck c) p
-    | Set.member c cs
-    = Just Fail
-    | otherwise
-    = Just (LineCheck c `msg1` j' p)
-
    unary (Set x e) p
     = Just (Set x e `msg1` j' p)
 
@@ -115,6 +105,18 @@ dcrossM cs p0 q
     = Nothing
     | otherwise
     = Just $ Message $ Binary (Read c x) (j' p1) (j' p2)
+
+   -- TODO: do we care what the other process is doing?
+   -- Line-check guard is global, so we can't know whether it succeeds
+   -- 1. Just because the other process has disconnected doesn't mean the rest of the world has.
+   -- 2. Send channels are uniquely owned, so the other process can't have a line-check.
+   --    (Two sends on same channel is outlawed for same reason)
+   binary (LineCheck c) p1 p2
+    | Set.member c cs
+    = Just $ j' p1
+    | otherwise
+    = Just $ Message $ Binary (LineCheck c) (j' p1) (j' p2)
+
 
    msg1 m p = Message (Unary m p)
 
@@ -183,10 +185,11 @@ copy1 ci co = Top
  { topIns = Set.singleton ci
  , topOuts = Set.singleton co
  , topTails = makeTails 
-    [(go, bin (Read ci buf)
-          ( una (SendValue co (EVar buf)) ( Jump go))
-          ( una (SendClose co) Done )
-          :+ una (LineCheck co) (una (Disconnect ci) Done))]
+    [(go, bin (LineCheck co)
+           (bin (Read ci buf)
+             (una (SendValue co (EVar buf)) (Jump go))
+             (una (SendClose co) Done))
+           (una (Disconnect ci) Done))]
     (Jump go)
  }
  where
