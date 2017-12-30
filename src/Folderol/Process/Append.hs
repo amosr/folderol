@@ -144,3 +144,36 @@ z as init = Proc.proc "z" $ do
 
   return (l0 init, o0)
 
+
+tail :: Monad m => Channel a -> Network m (Channel a)
+tail as = Proc.proc "tail" $ do
+  i0 <- Proc.input as
+  o0 <- Proc.output
+
+  l0 <- Proc.label0
+  l1 <- Proc.label1
+  l2 <- Proc.label0
+  l3 <- Proc.label1
+  l4 <- Proc.label0
+  l5 <- Proc.label0
+
+  Proc.instr0 l0 $
+    Proc.pull i0 l1 l5
+
+  Proc.instr1 l1 $ \_ ->
+    Proc.drop i0 l2
+
+  Proc.instr0 l2 $
+    Proc.pull i0 l3 l5
+
+  Proc.instr1 l3 $ \x ->
+    Proc.push o0 x l4
+
+  Proc.instr0 l4 $
+    Proc.drop i0 l2
+
+  Proc.instr0 l5 $
+    Proc.done
+
+  return (l0, o0)
+

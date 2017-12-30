@@ -14,6 +14,7 @@ import Test.Folderol.Kernel.Map2Ignorant
 import Test.Folderol.Kernel.PartitionAppend
 import Test.Folderol.Kernel.Zip1
 import Test.Folderol.Kernel.ZipSelf
+import Test.Folderol.Kernel.ZipSelfTail
 import Test.Folderol.Kernel.ZipWith3
 
 import qualified Folderol.Spawn as Spawn
@@ -141,6 +142,18 @@ prop_zipSelf = property $ do
   xs <- forAll genVec
   ys <- lift $ zipSelf xs
   ys === Vector.zip xs xs
+
+prop_zipSelfTail :: Property
+prop_zipSelfTail = property $ do
+  xs <- forAll genVec
+  ys <- lift $ zipSelfTail xs
+  ys === Vector.zip xs (Vector.drop 1 xs)
+
+prop_zipSelfTailDiff :: Property
+prop_zipSelfTailDiff = property $ do
+  xs <- forAll genVec
+  ys <- lift $ zipSelfTailDiff xs
+  ys === Vector.zipWith (-) xs (Vector.drop 1 xs)
 
 
 prop_zipWith3 :: Property
