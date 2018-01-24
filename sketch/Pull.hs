@@ -41,3 +41,24 @@ zzip (Stream s1) (Stream s2) = Stream go
 zmap :: (a -> b) -> Stream a -> Stream b
 zmap f (Stream s) = Stream ( fmap (fmap f) s)
 {-# INLINE zmap #-}
+
+
+-- mux from On the Duality: consumer's choice which one to pull from
+-- in OtD this has type
+--  mux :: CoSrc a → CoSrc b → CoSrc (a & b)
+-- and cannot be implemented on their Src definition.
+-- This is because a Src returns two separate values: the element and the remainder of the stream.
+-- The remainder of the stream cannot depend on what the environment does with the element, so the Src implementation must choose which one to pull from beforehand.
+--
+-- We are cheating by putting the remainder stream in IO so we can repeatedly pull from it, so it's not a direct comparison, but whatever.
+mux :: Stream a -> Stream b -> Stream (Either (Maybe a -> IO ()) (Maybe b -> IO ()) -> IO ())
+mux (Stream sa) (Stream sb) = Stream $ return $ Just $ \request ->
+  case request of
+   Left with -> do
+    a <- sa
+    with a
+   Right with -> do
+    b <- sb
+    with b
+  
+
