@@ -33,10 +33,10 @@ benches
  where
   chunks t f
    = bgroup t
-   -- [ bgroup "10"     $ sized' $ f 10
-   -- , bgroup "100"    $ sized' $ f 100
-   [ bgroup "1,000"  $ sized' $ f 1000
-   -- , bgroup "10,000"  $ sized' $ f 10000
+   [ bgroup "10"     $ sized' $ f 10
+   , bgroup "100"    $ sized' $ f 100
+   , bgroup "1,000"  $ sized' $ f 1000
+   , bgroup "10,000"  $ sized' $ f 10000
    ]
 
 sized' :: (Vector.Vector Int -> IO ()) -> [Benchmark]

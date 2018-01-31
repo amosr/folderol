@@ -7,6 +7,7 @@ import qualified Bench.Chan
 import qualified Bench.Part2
 import qualified Bench.PartitionAppend
 import qualified Bench.Quickhull
+import qualified Bench.Correlation
 
 import           Criterion.Main
 
@@ -22,5 +23,6 @@ main
  , Bench.Part2.benches
  , Bench.PartitionAppend.benches
  , Bench.Quickhull.benches
+ , Bench.Correlation.benches
  ]
 

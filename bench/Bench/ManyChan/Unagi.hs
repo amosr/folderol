@@ -1,24 +1,24 @@
 {-# LANGUAGE BangPatterns #-}
-module Bench.ManyChan.Base where
+module Bench.ManyChan.Unagi where
 
 import Folderol.Spawn
-import Control.Concurrent
+import Control.Concurrent.Chan.Unagi
 
 import qualified Data.Vector.Unboxed as Unboxed
 -- import qualified Data.Vector.Unboxed.Mutable as MUnboxed
 
 runChunkedUnbox :: Int -> Int -> Int -> IO ()
 runChunkedUnbox upto chans chunkSize = do
-  c <- newChan
-  join2 (pushIota c 0)
-        (go (chans - 1) c)
+  (i,o) <- newChan
+  join2 (pushIota i 0)
+        (go (chans - 1) o)
  where
   go 0 c = pullSum c 0
 
   go n c = do
-    c' <- newChan
-    join2 (forward c c')
-          (go (n - 1) c')
+    (i',o') <- newChan
+    join2 (forward c i')
+          (go (n - 1) o')
 
   forward from into = do
     v <- readChan from
