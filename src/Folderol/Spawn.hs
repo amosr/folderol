@@ -33,8 +33,9 @@ join2 a b = do
 channel :: MonadIO.MonadIO m => m (Sink.Sink m a, Source.Source m a)
 channel = do
   chan <- MonadIO.liftIO newChan
-  let liftS s = Morph.hoist MonadIO.liftIO s
-  return (liftS $ sink chan, liftS $ source chan)
+  let liftI s = Morph.hoist MonadIO.liftIO s
+  let liftO s = Sink.hoists MonadIO.liftIO s
+  return (liftO $ sink chan, liftI $ source chan)
   where
    {-# INLINE sink #-}
    sink q = Sink.Sink

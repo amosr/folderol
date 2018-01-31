@@ -1,36 +1,34 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE RankNTypes #-}
 module Folderol.Sink where
 
 import P
 
-import System.IO (IO)
-import Data.IORef
-
 import qualified Data.Vector.Generic as Generic
 import qualified Data.Vector.Generic.Mutable as MGeneric
 import qualified Data.Vector as Vector
-import qualified Data.Vector.Mutable as MVector
 
 import Control.Monad.Primitive
 
-import qualified Control.Monad.Morph as Morph
 
-
-data Sink m a
+data Sink m a r
  = forall s
  . Sink
  { init :: m s
  , push :: s -> a -> m s
- , done :: s -> m ()
+ , done :: s -> m r
  }
 
-instance Morph.MFunctor Sink where
- hoist f (Sink i p d) = Sink (f i) (\s a -> f $ p s a) (f . d)
+-- TODO: Functor, Applicative, Num?
+
+-- From Control.Foldl, analogous to Morph.hoist
+hoists :: (forall x. m x -> n x) -> Sink m a b -> Sink n a b
+hoists f (Sink i p d) = Sink (f i) (\s a -> f $ p s a) (f . d)
 
 {-# INLINE perform #-}
-perform :: Monad m => (a -> m ()) -> Sink m a
+perform :: Monad m => (a -> m ()) -> Sink m a ()
 perform f
  = Sink 
  { init = return ()
@@ -39,41 +37,25 @@ perform f
  }
 
 {-# INLINE listOfChannel #-}
-listOfChannel :: IORef [a] -> Sink IO a
-listOfChannel into
+listOfChannel :: Monad m => Sink m a [a]
+listOfChannel
  = Sink
  { init = return []
  , push = \xs x -> return (x : xs)
- , done = \xs   -> writeIORef into (reverse xs)
+ , done = \xs   -> return (reverse xs)
  }
 
 {-# INLINE vectorOfChannel #-}
-vectorOfChannel :: IORef (Vector.Vector a) -> Sink IO a
-vectorOfChannel into
- = Sink
- { init = (,) 0 <$> MVector.unsafeNew 4
-
- , push = \(used,xs) x -> do
-          xs' <- if used >= MVector.length xs
-                 then MVector.unsafeGrow xs (used * 2)
-                 else return xs
-          MVector.unsafeWrite xs' used x
-          return (used + 1, xs')
-
- , done = \(used,xs) -> do
-          xs' <- Vector.unsafeFreeze $ MVector.unsafeSlice 0 used xs
-          writeIORef into xs'
- }
+vectorOfChannel :: PrimMonad m => Sink m a (Vector.Vector a)
+vectorOfChannel = vectorOfChannel'Generic
 
 {-# INLINE vectorOfChannelAtMost #-}
-vectorOfChannelAtMost :: forall m a vData vRefM
+vectorOfChannelAtMost :: forall m a vData
      . PrimMonad m
     => Generic.Vector   vData a
-    => MGeneric.MVector vRefM (vData a)
     => Int
-    -> vRefM (PrimState m)    (vData a)
-    -> Sink m a
-vectorOfChannelAtMost upperlimit into
+    -> Sink m a (vData a)
+vectorOfChannelAtMost upperlimit
  = Sink
  { init = (,) 0 <$> MGeneric.unsafeNew upperlimit
 
@@ -82,18 +64,15 @@ vectorOfChannelAtMost upperlimit into
           return (used + 1, xs)
 
  , done = \(used,xs) -> do
-          xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
-          MGeneric.unsafeWrite into 0 xs'
+          Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
  }
 
 {-# INLINE vectorOfChannel'Generic #-}
-vectorOfChannel'Generic :: forall m a vData vRefM
+vectorOfChannel'Generic :: forall m a vData
      . PrimMonad m
     => Generic.Vector   vData a
-    => MGeneric.MVector vRefM (vData a)
-    => vRefM (PrimState m)    (vData a)
-    -> Sink m a
-vectorOfChannel'Generic into
+    => Sink m a (vData a)
+vectorOfChannel'Generic
  = Sink
  { init = (,) 0 <$> MGeneric.unsafeNew 4
 
@@ -105,29 +84,26 @@ vectorOfChannel'Generic into
           return (used + 1, xs')
 
  , done = \(used,xs) -> do
-          xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
-          MGeneric.unsafeWrite into 0 xs'
+          Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
  }
 
 {-# INLINE scalarOfChannel #-}
-scalarOfChannel :: (PrimMonad m, MGeneric.MVector v a) => v (PrimState m) a -> Sink m a
-scalarOfChannel into
+scalarOfChannel :: Monad m => Sink m a (Maybe a)
+scalarOfChannel
  = Sink
  { init = return Nothing
 
  , push = \_ x -> do
           return (Just x)
 
- , done = \case
-           Just x  -> MGeneric.unsafeWrite into 0 x
-           Nothing -> return ()
+ , done = return
  }
 
-instance Monad m => Monoid (Sink m a) where
+instance (Monad m, Monoid b) => Monoid (Sink m a b) where
  mempty = Sink
   { init = return ()
   , push = \() _ -> return ()
-  , done = \()   -> return () }
+  , done = \()   -> return mempty }
 
  mappend (Sink init0 push0 done0) (Sink init1 push1 done1) = Sink
   { init = do
@@ -139,6 +115,5 @@ instance Monad m => Monoid (Sink m a) where
       s1' <- push1 s1 a
       return (s0', s1')
   , done = \(s0, s1) -> do
-      done0 s0
-      done1 s1
+      mappend <$> done0 s0 <*> done1 s1
   }

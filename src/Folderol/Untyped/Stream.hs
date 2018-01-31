@@ -22,9 +22,9 @@ data Source m
  . Source { unSource :: Haskell.TExp (Source.Source m a) }
 
 data Sink m
- =  forall a
+ =  forall a b
  -- .  Typeable a
- . Sink { unSink :: Haskell.TExp (Sink.Sink m a) }
+ . Sink { unSink :: Haskell.TExp (Sink.Sink m a b) }
 
 instance Pretty.Pretty (Source m) where
  pretty (Source s) = Pretty.pretty s
