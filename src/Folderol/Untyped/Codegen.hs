@@ -175,8 +175,8 @@ genInstruction sources sinks (l, info)
   l'    = unLabel l
 
   bindsSpec = [Haskell.ConP 'SPEC []]
-  bindsSt = fmap (Haskell.VarP . stateName) (Map.keys sources) <> fmap (Haskell.VarP . stateName) (Map.keys sinks)
-  binds = fmap (Haskell.VarP . unVar)
+  bindsSt = fmap (Haskell.BangP . Haskell.VarP . stateName) (Map.keys sources) <> fmap (Haskell.BangP . Haskell.VarP . stateName) (Map.keys sinks)
+  binds = fmap (Haskell.BangP . Haskell.VarP . unVar)
         $ Set.toList
         $ infoBindings info
 
