@@ -8,6 +8,7 @@ import Test.Folderol.Kernel.Chunk
 import Test.Folderol.Kernel.Cycle
 import Test.Folderol.Kernel.Filter1
 import Test.Folderol.Kernel.FilterMap
+import Test.Folderol.Kernel.JoinBy
 import Test.Folderol.Kernel.Map1
 import Test.Folderol.Kernel.Map2
 import Test.Folderol.Kernel.Map2Ignorant
@@ -32,7 +33,7 @@ import           Control.Monad.Trans.Class (MonadTrans(..))
 
 
 genVec :: Gen IO (Vector.Vector Int)
-genVec = Vector.fromList <$> Gen.list (Range.linear 0 $ Spawn.channelChunkSize * 3) (Gen.int $ Range.linear 0 100)
+genVec = Vector.fromList <$> Gen.list (Range.linear 0 $ Spawn.defaultChannelChunkSize * 3) (Gen.int $ Range.linear 0 100)
 
 prop_appendSelf :: Property
 prop_appendSelf = property $ do
@@ -174,6 +175,21 @@ prop_zipWith3 = property $ do
          cs = fmap g as
          ds = Vector.zipWith h bs cs
      in  ds
+
+prop_joinBy1_eq :: Property
+prop_joinBy1_eq = property $ do
+  xs <- forAll genVec
+  ys <- forAll genVec
+  let xs' = sort xs
+  let ys' = sort ys
+  zs <- lift $ joinBy1 compare xs' ys'
+  let is = intersect xs' ys'
+  zs === (Vector.zip is is)
+ where
+  -- Silly, but whatever
+  sort = Vector.fromList . List.nub . List.sort . Vector.toList
+  intersect as bs = Vector.fromList $ List.intersect (Vector.toList as) (Vector.toList bs)
+
 
 tests :: IO Bool
 tests = $$(checkConcurrent)

@@ -6,5 +6,7 @@ import Folderol.Process.Chunk       as Ps
 import Folderol.Process.Filter      as Ps
 import Folderol.Process.Fold        as Ps
 import Folderol.Process.Map         as Ps
+import Folderol.Process.Merge       as Ps
+import Folderol.Process.Slice       as Ps
 import Folderol.Process.Zip         as Ps
 

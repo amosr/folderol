@@ -19,12 +19,13 @@ import           Control.Monad.Trans.Class (MonadTrans(..))
 
 prop_chan :: Property
 prop_chan = property $ do
+  chunkSize <- forAll $ Gen.int $ Range.linear 0 100
   -- Make sure to generate a few multiples of the chunk size,
   -- so we go through a full fill / send cycle
-  xs <- forAll $ Gen.list (Range.linear 0 $ Spawn.channelChunkSize * 3) (Gen.int $ Range.linear 0 100)
+  xs <- forAll $ Gen.list (Range.linear 0 $ chunkSize * 3) (Gen.int $ Range.linear 0 100)
 
   xs' <- lift $ do
-    (sink,source) <- Spawn.channel
+    (sink,source) <- Spawn.channel chunkSize
     ref <- newIORef []
     Spawn.join2 (from sink xs) (into source ref)
     readIORef ref

@@ -1,6 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE PatternGuards #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Folderol.Untyped.Transform where
 
 import Folderol.Untyped.Codegen
@@ -23,11 +24,17 @@ data FuseOptions
  = FuseOptions
  { verbose :: Bool
  , details :: Bool
- , maximumProcessCount :: Maybe Int }
+ , maximumProcessCount :: Maybe Int
+ , channelChunkSize :: Haskell.TExpQ Int
+ , strategy :: FuseStrategy }
+
+data FuseStrategy
+ = FuseBottomUp
+ | FuseNone
 
 defaultFuseOptions :: FuseOptions
 defaultFuseOptions
- = FuseOptions False False (Just 1)
+ = FuseOptions False False (Just 1) [||defaultChannelChunkSize||] FuseBottomUp
 
 logout :: Bool -> [Char] -> Pretty.Doc a -> Haskell.Q ()
 logout is pre doc = when is $ do
@@ -50,7 +57,7 @@ fuseGraph opts graph0 = do
   logout (verbose opts) "2: cullOutputs" $ U.prettyNetworkSummary graph2
   logout (details opts) "2: cullOutputs" $ Pretty.pretty graph2
 
-  graph3 <- U.fuseNetwork graph2
+  graph3 <- fuseNetwork (strategy opts) graph2
   logout (verbose opts) "3: fuseNetwork" $ U.prettyNetworkSummary graph3
   logout (details opts) "3: fuseNetwork" $ Pretty.pretty graph3
 
@@ -64,7 +71,7 @@ fuseGraph opts graph0 = do
 
   checkProcessCount graph5 (maximumProcessCount opts)
 
-  code <- Haskell.runQ $ genNetwork graph5
+  code <- Haskell.runQ $ genNetwork (channelChunkSize opts) graph5 
   return code
 
  where
@@ -84,3 +91,7 @@ fuseGraph opts graph0 = do
 
   procCountError m g
    = Haskell.reportWarning ("Maximum process count exceeded: after fusion there are " <> show (length $ U.nProcesses g) <> " processes, but maximum is " <> show m)
+
+  fuseNetwork FuseBottomUp = U.fuseNetwork
+  fuseNetwork FuseNone     = return
+

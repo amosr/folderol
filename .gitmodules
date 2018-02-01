@@ -4,3 +4,6 @@
 [submodule "lib/x"]
 	path = lib/x
 	url = git://github.com/ambiata/x.git
+[submodule "lib/anemone"]
+	path = lib/anemone
+	url = git@github.com:ambiata/anemone.git

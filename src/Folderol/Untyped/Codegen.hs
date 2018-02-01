@@ -38,8 +38,8 @@ genNetwork1 graph
 
 
 -- | Generate code for a network, inserting communication channels between processes
-genNetwork :: Spawn m => NetworkGraph m -> Haskell.TExpQ (m ())
-genNetwork graph0
+genNetwork :: Spawn m => Haskell.TExpQ Int -> NetworkGraph m -> Haskell.TExpQ (m ())
+genNetwork channelChunkSizeE graph0
  = go graph0 $ Set.toList $ interprocess $ nProcesses graph0
  where
   go g [] = genNetworkProcesses g
@@ -56,7 +56,8 @@ genNetwork graph0
         $ createNetwork (Map.singleton c e'src) (Map.singleton c e'snk) []
 
     Haskell.unsafeTExpCoerce (
-      (Haskell.varE '(>>=) `Haskell.appE` (Haskell.varE 'Spawn.channel)) `Haskell.appE`
+      (Haskell.varE '(>>=) `Haskell.appE`
+        (Haskell.varE 'Spawn.channel `Haskell.appE` Haskell.unTypeQ channelChunkSizeE)) `Haskell.appE`
       (Haskell.lamE [Haskell.conP '(,) [Haskell.varP c'snk, Haskell.varP c'src]]
                  $ (Haskell.unType <$> go g' cs)))
 

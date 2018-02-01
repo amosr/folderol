@@ -10,6 +10,7 @@ module Folderol.Splice
  , fuseVector_1_2
  , fuseVector_2_1
  , U.FuseOptions(..)
+ , U.FuseStrategy(..)
  , U.defaultFuseOptions
  ) where
 

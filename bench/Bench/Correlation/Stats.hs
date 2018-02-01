@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Bench.Correlation.Stats where
 
@@ -25,17 +26,17 @@ stddev i = do
 covariance :: (Monad m, Fractional a) => Channel (a,a) -> Network m (Channel a)
 covariance i = do
   o <- F.fold k z i
-  F.map [||\(_mx,_my,sd,n) -> sd / n||] o
+  F.map [||\(!_mx,!_my,!sd,!n) -> sd / n||] o
  where
   z = [||(0,0,0,0)||]
-  k = [||\(mx,my,sd,n) (x,y) ->
-        let n'  = n + 1
-            dx  = x - mx
-            dy  = y - my
-            mx' = mx + (dx / n')
-            my' = my + (dy / n')
-            dy' = y - my'
-            d   = dx + dy'
-            sd' = sd + d
+  k = [||\(!mx,!my,!sd,!n) (!x,!y) ->
+        let !n'  = n + 1
+            !dx  = x - mx
+            !dy  = y - my
+            !mx' = mx + (dx / n')
+            !my' = my + (dy / n')
+            !dy' = y - my'
+            !d   = dx + dy'
+            !sd' = sd + d
         in (mx',my',sd',n')||]
 

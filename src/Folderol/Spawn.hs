@@ -30,24 +30,24 @@ join2 a b = do
  return ()
 
 {-# INLINE channel #-}
-channel :: MonadIO.MonadIO m => m (Sink.Sink m a, Source.Source m a)
-channel = do
+channel :: MonadIO.MonadIO m => Int -> m (Sink.Sink m a, Source.Source m a)
+channel chunkSize = do
   chan <- MonadIO.liftIO newChan
   let liftS s = Morph.hoist MonadIO.liftIO s
   return (liftS $ sink chan, liftS $ source chan)
   where
    {-# INLINE sink #-}
    sink q = Sink.Sink
-    { Sink.init = (,) 0 <$> MVector.unsafeNew channelChunkSize
+    { Sink.init = (,) 0 <$> MVector.unsafeNew chunkSize
 
     , Sink.push = \(ix,mv) x -> do
        MVector.unsafeWrite mv ix x
        let ix' = ix + 1
-       case ix' == channelChunkSize of
+       case ix' == chunkSize of
         True -> do
           v <- Vector.unsafeFreeze mv
           writeChan q v
-          mv' <- MVector.unsafeNew channelChunkSize
+          mv' <- MVector.unsafeNew chunkSize
           return (0, mv')
         False -> do
           return (ix', mv)
@@ -73,7 +73,6 @@ channel = do
     , Source.done = \_ -> return ()
     }
 
--- TODO: this should be configurable
-channelChunkSize :: Int
-channelChunkSize = 100
+defaultChannelChunkSize :: Int
+defaultChannelChunkSize = 100
 
