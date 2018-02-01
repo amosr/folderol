@@ -1,4 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE ExistentialQuantification #-}
 module Folderol.Sink where
@@ -115,11 +116,11 @@ scalarOfChannel into
  = Sink
  { init = return Nothing
 
- , push = \_ x -> do
+ , push = \_ !x -> do
           return (Just x)
 
  , done = \case
-           Just x  -> MGeneric.unsafeWrite into 0 x
+           Just !x -> MGeneric.unsafeWrite into 0 x
            Nothing -> return ()
  }
 
