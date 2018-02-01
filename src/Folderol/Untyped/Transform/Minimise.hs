@@ -31,8 +31,11 @@ minimiseProcess p =
 
   get' seen (Next l u)
    = case Map.lookup l (pInstructions p) of
+    -- TODO: To avoid duplicating work, we can only inline if each parameter is mentioned at most once or is substituted by a variable or value which can be duplicated.
+    -- For now, conservatively avoid duplication by making sure variables are unique.
     Just (Info _ (I'Jump (Next l' u')))
-     | all justVar u'
+     | Just vs <- mapM justVar u'
+     , length u' == Set.size (Set.fromList $ Map.elems vs)
      , not $ Set.member l' seen
      -> get' (Set.insert l' seen) (Next l' $ fmap (substVars u) u')
     _
@@ -56,8 +59,8 @@ minimiseProcess p =
       I'Done
        -> I'Done
 
-  justVar (Haskell.VarE _) = True
-  justVar _ = False
+  justVar (Haskell.VarE v) = Just v
+  justVar _ = Nothing
 
   substVars m e
    | Haskell.VarE k <- e
