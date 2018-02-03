@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
 module Bench.Correlation.Queries where
 
@@ -22,6 +23,17 @@ priceOverMarket stock market = do
   pp <- F.map    [||\(s,m) -> (cost s, cost m)||] j
   correlation pp
 
+count :: Channel a -> Network IO (Channel Int)
+count stock = do
+  F.fold [||\(!a) _ -> a + 1||] [||0 :: Int||] stock
+
+
+q'count :: Haskell.TExpQ FilePath -> Network IO ()
+q'count fpStock = do
+  stock0 <- F.source [|| sourceLinesOfFile $$fpStock ||]
+  stock  <- F.map    [||readRecordUnsafe||] stock0
+  pot    <- count stock
+  F.sink pot [||perform print||]
 
 q1 :: Haskell.TExpQ FilePath -> Haskell.TExpQ (Sink IO Double) -> Network IO ()
 q1 fpStock snkC1 = do
@@ -60,4 +72,6 @@ q3 fpStock fpMarket snkC1 snkC2 snkC3 = do
   F.sink pot  snkC1
   F.sink pom  snkC2
   F.sink potm snkC3
+
+  return ()
 

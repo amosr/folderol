@@ -123,5 +123,5 @@ benchmark bench
                      , conduit
                      , bytestring
 
-  ghc-options:         -Wall -threaded -O2 -rtsopts
+  ghc-options:         -Wall -threaded -O3 -rtsopts
 

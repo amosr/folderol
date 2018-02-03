@@ -11,6 +11,14 @@ import qualified Bench.Correlation
 
 import           Criterion.Main
 
+import System.Environment (getArgs)
+
+{-
+main :: IO ()
+main = do
+  [m,fp] <- getArgs
+  Bench.Correlation.main0 m fp
+-}
 
 main :: IO ()
 main

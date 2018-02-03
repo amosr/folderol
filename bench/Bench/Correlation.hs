@@ -1,5 +1,6 @@
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
 module Bench.Correlation where
--- import Bench.Correlation.TopQ1H
+import Bench.Correlation.TopQ1H
 import Bench.Correlation.TopQ1F
 import Bench.Correlation.TopQ1U
 import Bench.Correlation.TopQ2F
@@ -31,7 +32,7 @@ benches
   chunks = [1, 10, 100, 1000, 10000, 100000, 1000000]
 
   sizes f
-   = fmap (goSize f) $ sizedExp [5..6]
+   = fmap (goSize f) $ sizedExp [6..6]
 
   goSize f i
    = env (gen i) 
@@ -52,3 +53,10 @@ benches
   gen_lines m i = fmap (gen_line m) [0 :: Int .. i]
   gen_line m i = show i ++ "," ++ show (i * m)
 
+main0 :: String -> FilePath -> IO ()
+main0 m fp = do
+  v <- case m of
+        "H" -> q1'hand fp
+        "F" -> q1'fused fp
+        _   -> q1'unfused (read m) fp
+  print v

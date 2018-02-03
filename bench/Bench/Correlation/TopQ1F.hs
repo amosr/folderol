@@ -9,6 +9,13 @@ import Bench.Plumbing.Folderol
 
 import Folderol.Splice
 
+{-
+q1'fused :: FilePath -> IO Double
+q1'fused fpStock = do
+  $$(fuse defaultFuseOptions $ q'count [||fpStock||])
+  return 0
+-}
+
 q1'fused :: FilePath -> IO Double
 q1'fused fpStock = do
   (c1,()) <- scalarIO $ \snkC1 ->

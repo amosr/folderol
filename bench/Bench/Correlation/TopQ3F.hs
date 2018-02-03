@@ -12,5 +12,6 @@ import Folderol.Splice
 q3'fused :: (FilePath,FilePath) -> IO (Double,Double,Double)
 q3'fused (fpStock, fpMarket) = do
   (c1,(c2,(c3,()))) <- scalarIO $ \snkC1 -> scalarIO $ \snkC2 -> scalarIO $ \snkC3 ->
-    $$(fuse defaultFuseOptions $ q3 [||fpStock||] [||fpMarket||] [||snkC1||] [||snkC2||] [||snkC3||])
+    $$(fuse defaultFuseOptions
+      $ q3 [||fpStock||] [||fpMarket||] [||snkC1||] [||snkC2||] [||snkC3||])
   return (c1,c2,c3)

@@ -8,6 +8,7 @@ import qualified Anemone.Parser as Anemone
 data Record = Record
  { time :: {-# UNPACK #-} !Time
  , cost :: {-# UNPACK #-} !Double }
+ deriving Show
 
 {-
 type Record = (Time,Double)
