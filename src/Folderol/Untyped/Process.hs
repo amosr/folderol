@@ -80,7 +80,6 @@ instance Pretty.Pretty Process where
     = Pretty.indent 2
     $ Pretty.vsep
     $ fmap (\(k,v) -> prettyLabel lns k <+>
-
         "(" <> Pretty.text (show $ Haskell.ppr $ unLabel k) <> ")" <+>
         "=" <+> prettyInfo lns v)
     $ Map.toList instrs

@@ -79,6 +79,7 @@ proc name p = do
   duplicate (c:cs)
    = mapM (U.liftQ . U.dup1Into c) cs
 
+-- Pass-through: useless, but sometimes useless things help me debug.
 dup1 :: Monad m => Channel a -> Network m (Channel a)
 dup1 (UnsafeChannel c) = do
   (p,c') <- U.liftQ $ U.dup1 c
