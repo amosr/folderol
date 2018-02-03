@@ -125,8 +125,8 @@ tryStepPair vars fml0 fl (Info pbinds pinstr) (Info qbinds qinstr)
  , I'Done <- qinstr
  = return (fml0, I'Done, [])
  | otherwise
- = do (fml1,pinstr') <- tryStep id      vars fml0 fl pinstr (updatesOfBinds qbinds)
-      (fml2,qinstr') <- tryStep swapper vars fml1 (swapper fl) qinstr (updatesOfBinds pbinds)
+ = do (fml1,pinstr') <- tryStep id      vars fml0 fl pbinds pinstr (updatesOfBinds qbinds)
+      (fml2,qinstr') <- tryStep swapper vars fml1 (swapper fl) qbinds qinstr (updatesOfBinds pbinds)
       case (pinstr', qinstr') of
        (Nothing, Nothing) -> EitherT.left $ Error'Fusion (CantFuse fl)
        (Just (i1,outs1), Just (i2,outs2))
@@ -156,12 +156,15 @@ tryStepPair vars fml0 fl (Info pbinds pinstr) (Info qbinds qinstr)
   updatesOfBinds
    = Map.fromSet (Haskell.VarE . unVar)
 
-tryStep :: (FuseLabel -> FuseLabel) -> Map Channel Var -> Map FuseLabel Label -> FuseLabel -> Instruction -> Map Var Haskell.Exp -> EitherT Error Haskell.Q (Map FuseLabel Label, Maybe (Instruction, [FuseLabel]))
-tryStep swapper vars fml0 fl instruction otherUpdates
+tryStep :: (FuseLabel -> FuseLabel) -> Map Channel Var -> Map FuseLabel Label -> FuseLabel -> Set Var -> Instruction -> Map Var Haskell.Exp -> EitherT Error Haskell.Q (Map FuseLabel Label, Maybe (Instruction, [FuseLabel]))
+tryStep swapper vars fml0 fl ibinds instruction otherUpdates
  = case instruction of
    I'Done
     -- TODO: these closes should be separate instructions
-    -> do (fml1,fl',n') <- mkNext fml0 (lblP fl) (fmap (const IS'Closed) vars) Map.empty
+    -> do -- Since we're jumping back to the same label, we need to pass the same arguments back.
+          -- It should be very rare that an end label has arguments, but it's possible.
+          let m = Map.fromSet (Haskell.VarE . unVar) ibinds
+          (fml1,fl',n') <- mkNext fml0 (lblP fl) (fmap (const IS'Closed) vars) m
           return (fml1, Just (I'Jump n', [fl']))
 
    I'Jump n

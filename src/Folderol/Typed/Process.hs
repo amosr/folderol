@@ -5,6 +5,7 @@ module Folderol.Typed.Process (
  , input
  , output
  , dup1
+ , dup2
 
  , pull
  , push
@@ -85,6 +86,12 @@ dup1 (UnsafeChannel c) = do
   (p,c') <- U.liftQ $ U.dup1 c
   U.tell $ U.createNetwork Map.empty Map.empty [p]
   return $ UnsafeChannel c'
+dup2 :: Monad m => Channel a -> Network m (Channel a, Channel a)
+dup2 (UnsafeChannel c) = do
+  (p,c1,c2) <- U.liftQ $ U.dup2 c
+  U.tell $ U.createNetwork Map.empty Map.empty [p]
+  return (UnsafeChannel c1, UnsafeChannel c2)
+
 
 input :: Monad m => Channel a -> Process m (Input a)
 input (UnsafeChannel u) = Process $ \name -> do
