@@ -61,7 +61,7 @@ prettyProcessSummary (Summary _ chans) p@(Process _ _ _ (Next linit _) instrs) =
    | otherwise = "??"
 
   pInstr (l, Info _ i)
-   = pLabel l <> ": " <> pInstr' i
+   = pLabel l <> " (" <> Pretty.text (show $ Haskell.ppr $ unLabel l) <> ")" <> ": " <> pInstr' i
 
   pInstr' = \case
    I'Pull c _ (Next l _) (Next l' _)

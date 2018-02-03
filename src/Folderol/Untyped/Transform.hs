@@ -48,6 +48,11 @@ fuseGraph :: Spawn m => FuseOptions -> U.NetworkGraph m -> Haskell.TExpQ (m ())
 fuseGraph opts graph0 = do
   logout (verbose opts) "0: input graph" $ U.prettyNetworkSummary graph0
   logout (details opts) "0: input graph" $ Pretty.pretty graph0
+  -- TODO: need to perform some sort of sanity check at the start, and between every stage.
+  -- * ensure all continuation variables are bound, and continuations are not overapplied.
+  -- * ensure all values are dropped after pulling
+  -- * ensure streams are not pulled again after closing
+  -- etc
 
   graph1 <- U.insertDups graph0
   logout (verbose opts) "1: insertDups" $ U.prettyNetworkSummary graph1

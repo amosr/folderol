@@ -29,11 +29,11 @@ dup2 input = do
   out1 <- chan
   out2 <- chan
   var0  <- var
-  lbl0 <- label
-  lbl1 <- label
-  lbl2 <- label
-  lbl3 <- label
-  lbl4 <- label
+  lbl0 <- label "0"
+  lbl1 <- label "1"
+  lbl2 <- label "2"
+  lbl3 <- label "3"
+  lbl4 <- label "4"
 
   vxp  <- Haskell.varE $ unVar var0
 
@@ -54,7 +54,7 @@ dup2 input = do
 
  where
   chan = Channel <$> Haskell.newName "dup"
-  label = Label <$> Haskell.newName "label"
+  label i = Label <$> Haskell.newName ("dup2_L" <> i)
   var   = Var <$> Haskell.newName "var"
 
 
@@ -83,20 +83,19 @@ dup1 input = do
 dup1Into :: Channel -> Channel -> Haskell.Q Process
 dup1Into input out1 = do
   var0  <- var
-  lbl0 <- label
-  lbl1 <- label
-  lbl2 <- label
-  lbl3 <- label
+  lbl0 <- label "0"
+  lbl1 <- label "1"
+  lbl2 <- label "2"
+  lbl3 <- label "3"
 
   vxp  <- Haskell.varE $ unVar var0
 
   let next  l = Next l Map.empty
-  let nextB l = Next l (Map.singleton var0 vxp)
   let inst  l i = (l, Info Set.empty i)
   let instB l i = (l, Info (Set.singleton var0) i)
 
   let is = [ inst  lbl0 (I'Pull input var0 (next  lbl1) (next lbl3))
-           , instB lbl1 (I'Push out1  vxp  (nextB lbl2))
+           , instB lbl1 (I'Push out1  vxp  (next  lbl2))
            , inst  lbl2 (I'Drop input      (next  lbl0))
            , inst  lbl3  I'Done]
 
@@ -105,7 +104,7 @@ dup1Into input out1 = do
   return proc
 
  where
-  label = Label <$> Haskell.newName "label"
+  label i = Label <$> Haskell.newName ("dup1_L" <> i)
   var   = Var <$> Haskell.newName "var"
 
 

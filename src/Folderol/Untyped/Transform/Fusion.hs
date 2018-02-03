@@ -87,8 +87,8 @@ fusePair p q
       vars <- sequence $ Map.mapWithKey mkVar $ Map.filter (==In1Out1) chans
 
       let initFL = FuseLabel (nextLabel $ pInitial p) (nextLabel $ pInitial q) Map.empty
-      (fml,l0) <- insertFuseLabel Map.empty initFL
-      instrs <- fixp (go vars) fml Map.empty [initFL]
+      (fml,l0) <- insertFuseLabel vars Map.empty initFL
+      instrs <- fixp go vars fml Map.empty [initFL]
 
       let init = Next l0 (Map.union (nextUpdates $ pInitial p) (nextUpdates $ pInitial q))
 
@@ -102,16 +102,16 @@ fusePair p q
        , pInitial      = init
        , pInstructions = instrs }
  where
-  fixp _ _ instrs0 []
+  fixp _ _ _ instrs0 []
    = return instrs0
-  fixp f fml0 instrs0 (fl:fls)
+  fixp f vars fml0 instrs0 (fl:fls)
    | Just l <- Map.lookup fl fml0
    , Just _ <- Map.lookup l  instrs0
-   = fixp f fml0 instrs0 fls
+   = fixp f vars fml0 instrs0 fls
    | otherwise
-   = do (fml1,l) <- insertFuseLabel fml0 fl
-        (fml2,info,outs) <- f fml1 fl
-        fixp f fml2 (Map.insert l info instrs0) (fls <> outs)
+   = do (fml1,l) <- insertFuseLabel vars fml0 fl
+        (fml2,info,outs) <- f vars fml1 fl
+        fixp f vars fml2 (Map.insert l info instrs0) (fls <> outs)
 
   go vars fml0 fl
    = do pinfo <- lookupInfo (lblP fl) p
@@ -228,7 +228,7 @@ tryStep swapper vars fml0 fl instruction otherUpdates
  where
   mkNext fml l is updates
    = do let fl' = swapper $ fl { lblP = l, isPQ = is }
-        (fml', l') <- insertFuseLabel fml fl'
+        (fml', l') <- insertFuseLabel vars fml fl'
         return (fml', fl', Next l' $ Map.unions [updates, otherUpdates, updatesOfFuseLabel vars fl'])
 
 infoOf :: Info -> Info -> Map Channel Var -> FuseLabel -> Instruction -> Info
@@ -257,11 +257,17 @@ updatesOfFuseLabel vars fl
  $ varsOfFuseLabel vars fl
 
 
-insertFuseLabel :: Map FuseLabel Label -> FuseLabel -> EitherT Error Haskell.Q (Map FuseLabel Label, Label)
-insertFuseLabel fml fl
+insertFuseLabel :: Map Channel Var -> Map FuseLabel Label -> FuseLabel -> EitherT Error Haskell.Q (Map FuseLabel Label, Label)
+insertFuseLabel sharedChannelVars fml fl
  | Just l <- Map.lookup fl fml
  = return (fml, l)
  | otherwise
- = do l' <- Label <$> lift (Haskell.newName "fuse")
+ = do l' <- Label <$> lift (Haskell.newName (show (Haskell.ppr $ unLabel $ lblP fl) <> "_" <> show (Haskell.ppr $ unLabel $ lblQ fl) <> "_" <> showIS))
       return (Map.insert fl l' fml, l')
+ where
+  showIS = fmap showIS1 $ Map.toList sharedChannelVars
+  showIS1 (k,_) = case Map.lookup k (isPQ fl) of
+    Nothing         -> 'n'
+    Just IS'Have    -> 'h'
+    Just IS'Closed  -> 'c'
 

@@ -29,6 +29,7 @@ data ProcessInfo
  { piInputs       :: Map U.Channel [U.Channel]
  , piOutputs      :: Set U.Channel
  , piInstructions :: Map U.Label U.Info
+ , piLabelCount   :: Int
  }
 
 data Input a
@@ -65,13 +66,21 @@ sfresh pre name = lift $ U.liftQ $ Haskell.newName (pre <> "_" <> name)
 pfresh :: Monad m => String -> Process m Haskell.Name
 pfresh name = Process $ \pre -> lift $ U.liftQ $ Haskell.newName (pre <> "_" <> name)
 
+lfresh :: Monad m => Process m Haskell.Name
+lfresh = Process $ \pre -> do
+  s <- State.get
+  let c = piLabelCount s
+  l <- lift $ U.liftQ $ Haskell.newName (pre <> "_L" <> show c)
+  State.put s { piLabelCount = c + 1 }
+  return l
+
 
 -- Generating labels ---------------
 type LabelRef = Haskell.Q U.Next
 
 labelZ :: Monad m => Process m (Map U.Var Haskell.Exp -> () -> LabelRef)
 labelZ = do
-  l <- U.Label <$> pfresh "label"
+  l <- U.Label <$> lfresh
   return $ \m _ -> return $ U.Next l m
 
 labelS :: Monad m => Process m (Map U.Var Haskell.Exp -> l -> LabelRef) -> Process m (Map U.Var Haskell.Exp -> (Haskell.TExpQ a, l) -> LabelRef)

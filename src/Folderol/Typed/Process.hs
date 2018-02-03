@@ -4,6 +4,7 @@ module Folderol.Typed.Process (
   proc
  , input
  , output
+ , dup1
 
  , pull
  , push
@@ -52,7 +53,7 @@ import Data.String (String)
 
 proc :: Monad m => String -> Process m (LabelRef, a) -> Network m a
 proc name p = do
-  ((init, r), pis) <- State.runStateT (runProcess p name) (ProcessInfo Map.empty Set.empty Map.empty)
+  ((init, r), pis) <- State.runStateT (runProcess p name) (ProcessInfo Map.empty Set.empty Map.empty 0)
 
   -- Simplest possible way to insert duplicates:
   -- channel input is
@@ -78,6 +79,11 @@ proc name p = do
   duplicate (c:cs)
    = mapM (U.liftQ . U.dup1Into c) cs
 
+dup1 :: Monad m => Channel a -> Network m (Channel a)
+dup1 (UnsafeChannel c) = do
+  (p,c') <- U.liftQ $ U.dup1 c
+  U.tell $ U.createNetwork Map.empty Map.empty [p]
+  return $ UnsafeChannel c'
 
 input :: Monad m => Channel a -> Process m (Input a)
 input (UnsafeChannel u) = Process $ \name -> do
