@@ -10,7 +10,6 @@ import qualified Folderol as F
 import Folderol.Sink
 import Bench.Plumbing.Folderol
 import Bench.Plumbing.Foldl
-import qualified Control.Foldl as Fold
 
 import qualified Folderol.Internal.Haskell as Haskell
 
@@ -27,7 +26,7 @@ priceOverMarket stock market snk = do
 
 sourceRecords :: Haskell.TExpQ FilePath -> Network IO (Channel Record)
 sourceRecords fp = do
-  lined <- F.source [||sourceLinesOfFileChunked $$fp||]
+  lined <- F.source [||sourceLinesOfFile $$fp||]
   records <- F.map    [||readRecordUnsafe||] lined
 
   return records
@@ -67,7 +66,7 @@ q4 :: Haskell.TExpQ FilePath -> Haskell.TExpQ FilePath -> Haskell.TExpQ (Sink IO
 q4 fpStock fpMarket snkC1 snkC2 snkC3 = do
   stock  <- sourceRecords fpStock
   market <- sourceRecords fpMarket
-  industry <- sourceRecords fpMarket -- industry
+  industry <- sourceRecords fpMarket -- TODO fpIndustry
 
   priceOverTime stock snkC1
   priceOverMarket stock market snkC2
