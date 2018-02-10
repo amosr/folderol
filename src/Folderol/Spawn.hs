@@ -29,6 +29,12 @@ join2 a b = do
  ((),()) <- Async.concurrently a b
  return ()
 
+-- Use boxed arrays for chunking.
+-- To try with unboxed arrays for chunks, change the imports and add an Unbox constraint.
+-- This is a bit annoying because not everything has an unbox instance; we would really like
+-- some kind of "best effort unboxed", which uses unboxed if possible but falls back to boxed.
+-- Fortunately(?) for a KPN with no fusion (Bench/Correlation) the communication and
+-- scheduling overheads completely hide any boxing costs, so this might not be an issue.
 {-# INLINE channel #-}
 channel :: MonadIO.MonadIO m => Int -> m (Sink.Sink m a, Source.Source m a)
 channel chunkSize = do
