@@ -1,10 +1,13 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Bench.Plumbing.Folderol where
 
 import qualified Folderol.Source as Source
 import qualified Folderol.Sink as Sink
+import qualified Folderol as Folderol
+import qualified Folderol.Internal.Haskell as Haskell
 
 import qualified System.IO as IO
 
@@ -16,9 +19,10 @@ import qualified Data.Vector.Mutable as MVector
 import qualified Data.Vector.Unboxed as Unbox
 import qualified Data.Vector.Unboxed.Mutable as MUnbox
 
-import Prelude hiding (filter, map)
+import Prelude hiding (filter, map, init)
 import Control.Monad.Primitive
 
+import qualified Control.Foldl as Fold
 
 sourceLinesOfFile :: FilePath -> Source.Source IO ByteString.ByteString
 sourceLinesOfFile f = Source.Source
@@ -34,23 +38,6 @@ sourceLinesOfFile f = Source.Source
  , Source.done = \h -> do
     IO.hClose h
  }
-
-{-
-sourceChunksOfFile :: FilePath -> Source.Source IO ByteString.ByteString
-sourceChunksOfFile f = Source.Source
- { Source.init = IO.openFile f IO.ReadMode
- , Source.pull = \h -> do
-    e <- IO.hIsEOF h
-    case e of
-     False -> do
-      l <- Char8.hGetSome h 4096
-      return (Just l, h)
-     True -> do
-      return (Nothing, h)
- , Source.done = \h -> do
-    IO.hClose h
- }
--}
 
 -- Not the default, because I can't be bothered implementing this for all the different libraries (Conduit, Streaming etc).
 -- But maybe I should implement it.
@@ -159,4 +146,24 @@ sourceOfVectorFlip !as0
                  else return (Nothing, ix)
  , Source.done = \_  -> return ()
  }
+
+-- TODO: these should not exist. We should modify Sink to take a return argument so it is same as FoldM
+sinkFoldl :: Monad m => Fold.Fold a r -> Sink.Sink m r -> Sink.Sink m a
+sinkFoldl (Fold.Fold k z x) (Sink.Sink init push done)
+ = Sink.Sink
+ { Sink.init = return z
+ , Sink.push = \(!s) (!e) -> return (k s e)
+ , Sink.done = \(!s) -> do
+    let !r = x s
+    s0 <- init
+    s1 <- push s0 r
+    done s1
+ }
+
+foldInto :: Monad m => Haskell.TExpQ (Fold.Fold a r) -> Folderol.Channel a -> Haskell.TExpQ (Sink.Sink m r) -> Folderol.Network m ()
+foldInto f i s = do
+  -- To compare against the KPN implementation, each fold needs to be its own process.
+  -- Sinks themselves aren't processes, so we construct a dummy pass-through process to attach the sink to.
+  o <- Folderol.map [||id||] i
+  Folderol.sink o [||sinkFoldl $$f $$s||]
 

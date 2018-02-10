@@ -7,6 +7,8 @@ import Bench.Correlation.TopQ2F
 import Bench.Correlation.TopQ2U
 import Bench.Correlation.TopQ3F
 import Bench.Correlation.TopQ3U
+import Bench.Correlation.TopQ4F
+import Bench.Correlation.TopQ4U
 
 import           Bench.Sized
 
@@ -27,9 +29,13 @@ benches
  , bench "q3.Fused"  $ run e q3'fused
  , bgroup "q3.Unfused" $
     map (\s -> bench (showSize s) $ run e $ q3'unfused s) chunks
+ , bench "q4.Fused"  $ run e q4'fused
+ , bgroup "q4.Unfused" $
+    map (\s -> bench (showSize s) $ run e $ q4'unfused s) chunks
  ]
  where
-  chunks = [1, 10, 100, 1000, 10000, 100000, 1000000]
+  -- 1000 seems to be the best trade-off
+  chunks = [1000] -- [1, 10, 100, 1000, 10000, 100000, 1000000]
 
   sizes f
    = fmap (goSize f) $ sizedExp [6..6]
@@ -41,7 +47,6 @@ benches
   run e f = whnfIO $ do
    i <- f e
    i `seq` return ()
-   -- if i /= 909090 && j /= 90911 then fail ("error:" ++ show (i,j)) else return ()
 
   gen i = do
    let i1 = "/tmp/folderol-bench-Correlation-stock"

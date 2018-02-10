@@ -122,6 +122,8 @@ benchmark bench
                      , pipes-extras
                      , conduit
                      , bytestring
+                     , vector-th-unbox
+                     , foldl
 
   ghc-options:         -Wall -threaded -O3 -rtsopts
 

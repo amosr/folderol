@@ -1,14 +1,39 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies #-}
 module Bench.Correlation.Base where
 
 import qualified Data.ByteString.Char8 as Char8
 import qualified Anemone.Parser as Anemone
 
+import qualified Bench.Plumbing.Box as Box
+import Data.Vector.Unboxed.Deriving (derivingUnbox)
+
+newtype Time = Time Double
+  deriving (Eq, Ord, Show)
+
+{-# INLINE daysSinceEpoch #-}
+daysSinceEpoch :: Time -> Double
+daysSinceEpoch (Time t) = t
+
+
 data Record = Record
  { time :: {-# UNPACK #-} !Time
  , cost :: {-# UNPACK #-} !Double }
  deriving Show
+
+
+derivingUnbox "Record"
+  [t|Record -> (Double,Double)|]
+  [|\r -> (daysSinceEpoch (time r), cost r)|]
+  [|\(t,c) -> Record (Time t) c|]
+
+derivingUnbox "ByteString"
+  [t|Char8.ByteString -> Box.Box Char8.ByteString|]
+  [|Box.box|] [|Box.unbox|]
+  
 
 {-
 type Record = (Time,Double)
@@ -19,13 +44,6 @@ time = fst
 cost :: Record -> Double
 cost = snd
 -}
-
-newtype Time = Time Double
-  deriving (Eq, Ord, Show)
-
-{-# INLINE daysSinceEpoch #-}
-daysSinceEpoch :: Time -> Double
-daysSinceEpoch (Time t) = t
 
 {-# INLINE readRecord #-}
 readRecord :: Char8.ByteString -> Maybe (Record, Char8.ByteString)
