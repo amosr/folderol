@@ -114,14 +114,9 @@ vectorOfChannel'Generic into
 scalarOfChannel :: (PrimMonad m, MGeneric.MVector v a) => v (PrimState m) a -> Sink m a
 scalarOfChannel into
  = Sink
- { init = return Nothing
-
- , push = \_ !x -> do
-          return (Just x)
-
- , done = \case
-           Just !x -> MGeneric.unsafeWrite into 0 x
-           Nothing -> return ()
+ { init = return ()
+ , push = \_ !x -> MGeneric.unsafeWrite into 0 x
+ , done = \_ -> return ()
  }
 
 instance Monad m => Monoid (Sink m a) where
