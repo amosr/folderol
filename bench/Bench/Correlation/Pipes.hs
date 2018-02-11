@@ -16,7 +16,7 @@ import qualified Control.Foldl as Fold
 
 priceOverTime :: FilePath -> IO Double
 priceOverTime fpStock = 
-  Fold.purely P.fold correlation $ go
+  Fold.purely P.fold covariance $ go
  where
   go
    = sourceRecords fpStock
@@ -24,7 +24,7 @@ priceOverTime fpStock =
 
 priceOverMarket :: FilePath -> FilePath -> IO Double
 priceOverMarket fpStock fpMarket = 
-  Fold.purely P.fold correlation $ go
+  Fold.purely P.fold covariance $ go
  where
   go
    = joinBy (\s m -> time s `compare` time m) (sourceRecords fpStock) (sourceRecords fpMarket)

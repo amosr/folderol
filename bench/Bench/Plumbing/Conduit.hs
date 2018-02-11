@@ -1,33 +1,37 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE RankNTypes #-}
 module Bench.Plumbing.Conduit where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.Conduit  as C
+import qualified Data.Conduit.List as CL
 import qualified System.IO as IO
 import Control.Monad.Trans.Class (lift)
 
+import qualified Bench.Plumbing.Chunks as Chunks
+
 import qualified Data.Vector.Unboxed as Unbox
 import qualified Data.Vector.Unboxed.Mutable as MUnbox
+
+import qualified Control.Foldl as Fold
 
 
 {-# INLINE sourceFile #-}
 sourceFile :: FilePath -> C.Source IO ByteString.ByteString
 sourceFile fp = do
   h <- lift $ IO.openFile fp IO.ReadMode
-  go h
+  go Char8.empty h
   lift $ IO.hClose h
  where
-  go h = do
-    e <- lift $ IO.hIsEOF h
-    case e of
-     False -> do
-      l <- lift $ Char8.hGetLine h
+  go buf h = do
+    (line,buf') <- lift $ Chunks.pullLine buf h
+    case line of
+     Just l -> do
       C.yield l
-      go h
-     True -> do
-      return ()
+      go buf' h
+     Nothing -> return ()
 
 {-# INLINE sourceVector #-}
 sourceVector :: Unbox.Unbox a => Unbox.Vector a -> C.Source IO a
@@ -71,4 +75,8 @@ sinkVectorAtMost len = do
       go (ix + 1) r
      Nothing -> do
       Unbox.unsafeFreeze $ MUnbox.unsafeSlice 0 ix r
+
+foldConduit :: Monad m => Fold.Fold a b -> C.Consumer a m b
+foldConduit (Fold.Fold k z x) =
+ x <$> CL.fold k z
 

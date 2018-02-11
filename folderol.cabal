@@ -124,6 +124,7 @@ benchmark bench
                      , bytestring
                      , vector-th-unbox
                      , foldl
+                     , mmorph
 
   ghc-options:         -Wall -threaded -O3 -rtsopts
 

@@ -16,13 +16,13 @@ import qualified Folderol.Internal.Haskell as Haskell
 priceOverTime :: Channel Record -> Haskell.TExpQ (Sink IO Double) -> Network IO ()
 priceOverTime stock snk = do
   tp <- F.map [||\s -> (daysSinceEpoch $ time s, cost s)||] stock
-  Stats.correlation tp >>= flip F.sink snk
+  Stats.covariance tp >>= flip F.sink snk
 
 priceOverMarket :: Channel Record -> Channel Record -> Haskell.TExpQ (Sink IO Double) -> Network IO ()
 priceOverMarket stock market snk = do
   j  <- F.joinBy [||\s m -> time s `compare` time m||] stock market
   pp <- F.map    [||\(s,m) -> (cost s, cost m)||] j
-  Stats.correlation pp >>= flip F.sink snk
+  Stats.covariance pp >>= flip F.sink snk
 
 sourceRecords :: Haskell.TExpQ FilePath -> Network IO (Channel Record)
 sourceRecords fp = do

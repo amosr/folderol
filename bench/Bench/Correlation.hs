@@ -11,6 +11,8 @@ import Bench.Correlation.TopQ4F
 import Bench.Correlation.TopQ4U
 
 import Bench.Correlation.Pipes
+-- import Bench.Correlation.Conduit
+import Bench.Correlation.Streaming
 
 import           Bench.Sized
 
@@ -23,18 +25,22 @@ benches
  = bgroup "Correlation" $ sizes $ \e ->
  [ bench "q1.Hand"  $ run e (q1'hand . fst)
  , bench "q1.Pipes"  $ run e (q1'pipes . fst)
+ , bench "q1.Streaming"  $ run e (q1'streaming . fst)
  , bench "q1.Fused"  $ run e (q1'fused . fst)
  , bgroup "q1.Unfused" $
     map (\s -> bench (showSize s) $ run e (q1'unfused s . fst)) chunks
  , bench "q2.Pipes"  $ run e q2'pipes
+ , bench "q2.Streaming"  $ run e q2'streaming
  , bench "q2.Fused"  $ run e q2'fused
  , bgroup "q2.Unfused" $
     map (\s -> bench (showSize s) $ run e $ q2'unfused s) chunks
  , bench "q3.Pipes"  $ run e q3'pipes
+ , bench "q3.Streaming"  $ run e q3'streaming
  , bench "q3.Fused"  $ run e q3'fused
  , bgroup "q3.Unfused" $
     map (\s -> bench (showSize s) $ run e $ q3'unfused s) chunks
  , bench "q4.Pipes"  $ run e q4'pipes
+ , bench "q4.Streaming"  $ run e q4'streaming
  , bench "q4.Fused"  $ run e q4'fused
  , bgroup "q4.Unfused" $
     map (\s -> bench (showSize s) $ run e $ q4'unfused s) chunks
