@@ -105,12 +105,18 @@ correlation :: Floating a => Fold (a,a) a
 correlation =
   covariance / (Fold.premap fst Fold.std * Fold.premap snd Fold.std)
 
+variance :: Floating a => Fold a a
+variance = Fold.variance
+
+mean :: Fractional a => Fold a a
+mean = Fold.mean
+
+
 -- In Icicle, Huw calls this "gradient with units y/x":
 -- > gradient a b = covariance a b / variance b.
+-- But I have flipped this around to be.
+-- > gradient x y = covariance x y / variance x
 --
--- This is equivalent to
--- > correlation a b * variance a
--- So it's the correlation scaled by the magnitude of "a".
 -- Which is like fitting the line to the points.
 -- Finding the constant for the line is something like
 -- > mean y - gradient y x * mean x
@@ -118,7 +124,7 @@ correlation =
 {-# INLINE gradient #-}
 gradient :: Floating a => Fold (a,a) a
 gradient =
-  covariance / Fold.premap snd Fold.variance
+  covariance / Fold.premap fst Fold.variance
 
 
 -- TODO: circular buffer maybe
@@ -160,5 +166,4 @@ stutter2 n =
  where
   go (Just a) bs = fmap ((,) a) bs
   go Nothing _ = Vector.empty
-
 
