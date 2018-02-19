@@ -26,6 +26,7 @@ import Control.Monad.Primitive
 
 import qualified Control.Foldl as Fold
 
+{-# INLINE sourceLinesOfFile #-}
 sourceLinesOfFile :: FilePath -> Source.Source IO ByteString.ByteString
 sourceLinesOfFile f = Source.Source
  { Source.init = do
@@ -38,6 +39,7 @@ sourceLinesOfFile f = Source.Source
     IO.hClose h
  }
 
+{-# INLINE sinkFileOfLines #-}
 sinkFileOfLines :: FilePath -> Sink.Sink IO ByteString.ByteString
 sinkFileOfLines f = Sink.Sink
  { Sink.init = IO.openFile f IO.WriteMode
