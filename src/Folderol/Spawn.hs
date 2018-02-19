@@ -14,7 +14,7 @@ import P
 
 import System.IO (IO)
 
-import Control.Concurrent
+import Control.Concurrent.Chan.Unagi.Bounded
 
 import qualified Control.Monad.Morph as Morph
 import qualified Control.Concurrent.Async.Lifted as Async
@@ -38,9 +38,9 @@ join2 a b = do
 {-# INLINE channel #-}
 channel :: MonadIO.MonadIO m => Int -> m (Sink.Sink m a, Source.Source m a)
 channel chunkSize = do
-  chan <- MonadIO.liftIO newChan
+  (ichan,ochan) <- MonadIO.liftIO $ newChan 1
   let liftS s = Morph.hoist MonadIO.liftIO s
-  return (liftS $ sink chan, liftS $ source chan)
+  return (liftS $ sink ichan, liftS $ source ochan)
   where
    {-# INLINE sink #-}
    sink q = Sink.Sink

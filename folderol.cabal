@@ -26,6 +26,7 @@ library
                      , monad-control
                      , lifted-async
                      , resourcet
+                     , unagi-chan
 
   ghc-options:         -Wall -O2
 
