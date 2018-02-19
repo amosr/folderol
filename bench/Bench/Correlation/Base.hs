@@ -6,7 +6,7 @@
 module Bench.Correlation.Base where
 
 import qualified Data.ByteString.Char8 as Char8
-import qualified Anemone.Parser as Anemone
+import qualified Bench.Plumbing.ParseInt as ParseInt
 
 import qualified Bench.Plumbing.Box as Box
 import Data.Vector.Unboxed.Deriving (derivingUnbox)
@@ -48,9 +48,9 @@ cost = snd
 {-# INLINE readRecord #-}
 readRecord :: Char8.ByteString -> Maybe (Record, Char8.ByteString)
 readRecord bs0 = do
-  (!t,bs1)   <- Anemone.parseInt64 bs0
+  (!t,bs1)   <- ParseInt.atoi bs0
   (',',bs2) <- Char8.uncons  bs1
-  (!c,bs3)   <- Anemone.parseInt64 bs2
+  (!c,bs3)   <- ParseInt.atoi bs2
   return (Record (Time $ fromIntegral t) (fromIntegral c), bs3)
   -- return ((Time $ fromIntegral t, fromIntegral c), bs3)
 
