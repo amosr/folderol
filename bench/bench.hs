@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# LANGUAGE CPP #-}
 import qualified Bench.Append2
 import qualified Bench.Array
 import qualified Bench.Audio
@@ -13,12 +14,13 @@ import           Criterion.Main
 
 import System.Environment (getArgs)
 
-{-
+#if 0
 main :: IO ()
 main = do
   [m,fp] <- getArgs
   Bench.Correlation.main0 m fp
--}
+
+#else
 
 main :: IO ()
 main
@@ -33,4 +35,4 @@ main
  , Bench.Quickhull.benches
  , Bench.Correlation.benches
  ]
-
+#endif
