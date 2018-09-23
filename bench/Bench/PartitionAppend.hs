@@ -6,6 +6,7 @@ import Bench.Sized
 import qualified Bench.PartitionAppend.Folderol
 import qualified Bench.PartitionAppend.Vector
 -- import qualified Bench.PartitionAppend.Hand
+import qualified Bench.PartitionAppend.FolderolWarn
 
 import           Criterion
 
@@ -13,7 +14,8 @@ import           Criterion
 benches :: Benchmark
 benches
  = bgroup "PartitionAppend"
- [ bgroup "Folderol-chan" $ sized' Bench.PartitionAppend.Folderol.runPartAppChan
+ [ bgroup "Folderol-chan-partially-fused" $ map (\cs -> bgroup (show cs) $ sized' $ Bench.PartitionAppend.FolderolWarn.runPartAppChanPartFused cs) chunks
+ , bgroup "Folderol-chan-unfused" $ map (\cs -> bgroup (show cs) $ sized' $ Bench.PartitionAppend.FolderolWarn.runPartAppChanUnfused cs) chunks
  , bgroup "Folderol-2ix" $ sized' Bench.PartitionAppend.Folderol.runPartApp2ix
  , bgroup "Folderol-2kernel" $ sized' Bench.PartitionAppend.Folderol.runPartApp2kernel
  , bgroup "Vector"   $ sized' Bench.PartitionAppend.Vector.runPartApp
@@ -21,4 +23,5 @@ benches
  ]
  where
   sized' f = sizedWithVector f $ sizedExp [7..7]
+  chunks = [ 10, 100, 1000, 10000, 100000, 1000000]
 

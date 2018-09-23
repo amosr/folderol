@@ -25,7 +25,7 @@ randomVector :: Generic.Vector v Int => Int -> v Int
 randomVector n
  = Generic.map shittyRandom $ Generic.enumFromTo 0 n
  where
-  shittyRandom i = ((i * 12379 `mod` 14289) - 7000) * (i `mod` 5219)
+  shittyRandom i = ((i * 12379 `mod` 14289) - 1000) * (i `mod` 5219)
 
 
 sizedExp :: [Int] -> [Int]

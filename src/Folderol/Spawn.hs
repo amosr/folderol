@@ -2,6 +2,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE BangPatterns #-}
 module Folderol.Spawn where
 
 import qualified Folderol.Source as Source
@@ -14,7 +15,7 @@ import P
 
 import System.IO (IO)
 
-import Control.Concurrent.Chan.Unagi.Bounded
+import Control.Concurrent.Chan.Unagi
 
 import qualified Control.Monad.Morph as Morph
 import qualified Control.Concurrent.Async.Lifted as Async
@@ -36,49 +37,57 @@ join2 a b = do
 -- Fortunately(?) for a KPN with no fusion (Bench/Correlation) the communication and
 -- scheduling overheads completely hide any boxing costs, so this might not be an issue.
 {-# INLINE channel #-}
-channel :: MonadIO.MonadIO m => Int -> m (Sink.Sink m a, Source.Source m a)
+channel :: (MonadIO.MonadIO m) => Int -> m (Sink.Sink m a, Source.Source m a)
 channel chunkSize = do
-  (ichan,ochan) <- MonadIO.liftIO $ newChan 1
+  (ichan,ochan) <- MonadIO.liftIO $ newChan
   let liftS s = Morph.hoist MonadIO.liftIO s
   return (liftS $ sink ichan, liftS $ source ochan)
   where
    {-# INLINE sink #-}
-   sink q = Sink.Sink
+   sink !q = Sink.Sink
     { Sink.init = (,) 0 <$> MVector.unsafeNew chunkSize
 
-    , Sink.push = \(ix,mv) x -> do
+    , Sink.push = \(!ix,!mv) !x -> do
        MVector.unsafeWrite mv ix x
-       let ix' = ix + 1
+       let !ix' = ix + 1
        case ix' == chunkSize of
         True -> do
           v <- Vector.unsafeFreeze mv
-          writeChan q v
+          writeChan' q v
           mv' <- MVector.unsafeNew chunkSize
           return (0, mv')
         False -> do
           return (ix', mv)
 
-    , Sink.done = \(ix,mv) -> do
+    , Sink.done = \(!ix,!mv) -> do
        v <- Vector.unsafeFreeze $ MVector.unsafeSlice 0 ix mv
-       writeChan q v
-       writeChan q Vector.empty
+       writeChan' q v
+       writeChan' q Vector.empty
     }
 
-   source q = Source.Source
-    { Source.init = return (0, Vector.empty)
+   {-# INLINE source #-}
+   source !q = Source.Source
+    { Source.init = return (0, 0, Vector.empty)
 
-    , Source.pull = \(ix,v) -> do
-       case ix < Vector.length v of
-        True -> return (Just $ Vector.unsafeIndex v ix, (ix + 1, v))
+    , Source.pull = \(!ix,!len,!v) -> do
+       case ix < len of
+        True -> return (Just $ Vector.unsafeIndex v ix, (ix + 1, len, v))
         False -> do
-          v' <- readChan q
+          v' <- readChan' q
           case Vector.null v' of
-           True  -> return (Nothing, (0,v'))
-           False -> return (Just $ Vector.unsafeIndex v' 0, (1, v'))
+           True  -> return (Nothing, (0,0,v'))
+           False -> return (Just $ Vector.unsafeIndex v' 0, (1, Vector.length v', v'))
 
     , Source.done = \_ -> return ()
     }
 
+   {-# NOINLINE writeChan' #-}
+   writeChan' = writeChan
+
+   {-# NOINLINE readChan' #-}
+   readChan' = readChan
+
 defaultChannelChunkSize :: Int
 defaultChannelChunkSize = 100
+
 

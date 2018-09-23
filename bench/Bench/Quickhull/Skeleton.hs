@@ -38,5 +38,5 @@ genPoints is
  = let len = Unbox.length is `div` 2
        xs  = Unbox.slice 0   len is
        ys  = Unbox.slice len len is
-   in Unbox.zipWith (\x y -> (fromIntegral x, fromIntegral y)) xs ys
+   in Unbox.zipWith (\(i,x) y -> (fromIntegral x + fromIntegral i, fromIntegral y + fromIntegral i)) (Unbox.indexed xs) ys
 

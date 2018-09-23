@@ -5,6 +5,7 @@ import qualified Bench.Array
 import qualified Bench.Audio
 import qualified Bench.ManyChan
 import qualified Bench.Chan
+import qualified Bench.Clustering
 import qualified Bench.Part2
 import qualified Bench.PartitionAppend
 import qualified Bench.Quickhull
@@ -29,6 +30,7 @@ main
  , Bench.Array.benches
  , Bench.Audio.benches
  , Bench.Chan.benches
+ , Bench.Clustering.benches
  , Bench.ManyChan.benches
  , Bench.Part2.benches
  , Bench.PartitionAppend.benches
