@@ -169,8 +169,9 @@ genInstruction sources sinks (l, info)
       -- Insert wildcard case expressions for every binding to silence -Wunused-binds
       forced <- foldM insertForce body $ Set.toList $ infoBindings info 
       let clause = Haskell.Clause (bindsSpec <> bindsSt <> binds) (Haskell.NormalB forced) []
-      -- let inline = Haskell.InlineP l' Haskell.Inlinable Haskell.FunLike Haskell.AllPhases
-      -- Haskell.PragmaD inline,
+      -- Removed INLINE pragmas because they were interfering with SpecConstr:
+      -- > let inline = Haskell.InlineP l' Haskell.Inlinable Haskell.FunLike Haskell.AllPhases
+      -- > Haskell.PragmaD inline,
       return [ Haskell.FunD l' [clause] ]
  where
   l'    = unLabel l
