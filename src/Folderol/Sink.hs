@@ -78,12 +78,12 @@ vectorOfChannelAtMost upperlimit into
  = Sink
  { init = (,) 0 <$> MGeneric.unsafeNew upperlimit
 
- , push = \(used,xs) x -> do
+ , push = \(!used,!xs) x -> do
           MGeneric.unsafeWrite xs used x
           return (used + 1, xs)
 
- , done = \(used,xs) -> do
-          xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
+ , done = \(!used,!xs) -> do
+          !xs' <- Generic.unsafeFreeze $ MGeneric.unsafeSlice 0 used xs
           MGeneric.unsafeWrite into 0 xs'
  }
 

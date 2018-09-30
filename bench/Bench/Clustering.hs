@@ -16,19 +16,18 @@ import qualified Data.Vector.Unboxed as Unbox
 benches :: Benchmark
 benches
  = bgroup "Clustering"
- -- [ bgroup "Normalize2"
- --   [ bgroup "unfused"     $ sized' Bench.Clustering.Normalize2.normalize2'unfused
- --   , bgroup "robinson" $ sized' Bench.Clustering.Normalize2.normalize2'robinson
- --   , bgroup "megiddo"  $ sized' Bench.Clustering.Normalize2.normalize2'megiddo
- --   , bgroup "pull"     $ sized' Bench.Clustering.Normalize2.normalize2'pull
- --   ]
- --   []
- -- , bgroup "ClosestPoints"
- --   [ bgroup "robinson-megiddo" $ points Bench.Clustering.ClosestPoints.closest'robinsonmegiddo
- --   , bgroup "pull" $ points Bench.Clustering.ClosestPoints.closest'pull
- --   , bgroup "unfused" $ points Bench.Clustering.ClosestPoints.closest'unfused
- --   ]
- [ bgroup "Quadtree"
+ [ bgroup "Normalize2"
+   [ bgroup "unfused"     $ sized' Bench.Clustering.Normalize2.normalize2'unfused
+   , bgroup "robinson" $ sized' Bench.Clustering.Normalize2.normalize2'robinson
+   , bgroup "megiddo"  $ sized' Bench.Clustering.Normalize2.normalize2'megiddo
+   , bgroup "pull"     $ sized' Bench.Clustering.Normalize2.normalize2'pull
+   ]
+ , bgroup "ClosestPoints"
+   [ bgroup "robinson-megiddo" $ points Bench.Clustering.ClosestPoints.closest'robinsonmegiddo
+   , bgroup "pull" $ points Bench.Clustering.ClosestPoints.closest'pull
+   , bgroup "unfused" $ points Bench.Clustering.ClosestPoints.closest'unfused
+   ]
+ , bgroup "Quadtree"
    [ bgroup "robinson-megiddo" $ points Bench.Clustering.Quadtree.quadtree'robinsonmegiddo
    , bgroup "pull-unfused" $ points Bench.Clustering.Quadtree.quadtree'pull
    ]
@@ -40,8 +39,8 @@ benches
    ]
  ]
  where
-  sized' f = sizedWithVector f $ sizedExp [7..7]
-  points f = sizedWithVector (f . genPoints) $ sizedExp [7..7]
+  sized' f = sizedWithVector f $ sizedExp [8..8]
+  points f = sizedWithVector (f . genPoints) $ sizedExp [8..8]
 
   genPoints :: Unbox.Vector Int -> Unbox.Vector (Double,Double)
   genPoints is

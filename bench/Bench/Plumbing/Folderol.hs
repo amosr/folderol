@@ -88,10 +88,10 @@ vector f = do
 vectorAtMost :: forall m a b
         . (PrimMonad m, Unbox.Unbox a)
        => Int -> (Sink.Sink m a -> m b) -> m (Unbox.Vector a, b)
-vectorAtMost len f = do
- ref <- MVector.unsafeNew 1 -- :: m (MVector.MVector (PrimState m) a)
+vectorAtMost !len f = do
+ !ref <- MVector.unsafeNew 1 -- :: m (MVector.MVector (PrimState m) a)
  b   <- f $ Sink.vectorOfChannelAtMost len ref
- a   <- MVector.unsafeRead ref 0
+ !a   <- MVector.unsafeRead ref 0
  return (a, b)
 
 -- | SourceOfVector with the branches flipped.

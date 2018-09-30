@@ -16,20 +16,21 @@ import           Criterion
 benches :: Benchmark
 benches
  = bgroup "Quickhull"
- [ bgroup "Conduit"
-   [ bgroup "TwoPass"   $ sized' Bench.Quickhull.Conduit.runQuickhullTwoPass
-   , bgroup "OnePass"   $ sized' Bench.Quickhull.Conduit.runQuickhullOnePass
-   ]
- , bgroup "Pipes"       $ sized' Bench.Quickhull.Pipes.runQuickhull
- , bgroup "Streaming"   $ sized' Bench.Quickhull.Streaming.runQuickhull
- , bgroup "Hand"        $ sized' Bench.Quickhull.Hand.runQuickhull
+ -- [ bgroup "Conduit"
+ --   [ bgroup "TwoPass"   $ sized' Bench.Quickhull.Conduit.runQuickhullTwoPass
+ --   , bgroup "OnePass"   $ sized' Bench.Quickhull.Conduit.runQuickhullOnePass
+ --   ]
+ -- , bgroup "Pipes"       $ sized' Bench.Quickhull.Pipes.runQuickhull
+ -- , bgroup "Streaming"   $ sized' Bench.Quickhull.Streaming.runQuickhull
+ [ bgroup "Hand"        $ sized' Bench.Quickhull.Hand.runQuickhull
  , bgroup "Folderol"    $ sized' Bench.Quickhull.Folderol.runQuickhull
+ , bgroup "Folderol-gen"$ sized' Bench.Quickhull.Folderol.runQuickhullGen
  , bgroup "Vector" 
    [ bgroup "Recompute" $ sized' Bench.Quickhull.Vector.runQuickhullRecompute
    , bgroup "Store"     $ sized' Bench.Quickhull.Vector.runQuickhullStore
    ]
  ]
  where
-  sized' f = sizedWithVector f $ sizedExp [1..7]
+  sized' f = sizedWithVector f $ sizedExp [7..7]
   -- sized' f = sizedWithVector f [16000000]
 

@@ -139,8 +139,11 @@ filterMax'unfused l vec = unsafeDupablePerformIO $ do
  return (fst maxim, aboveV)
 
 {-# INLINE maxBy #-}
+maxBy :: (Point,Double) -> (Point,Double) -> (Point,Double)
 maxBy = \((!x1,!y1),!d1) ((!x2,!y2),!d2) -> if d1 > d2 then ((x1,y1),d1) else ((x2,y2),d2)
+
 {-# INLINE negInf #-}
+negInf :: Double
 negInf = -1 / 0
 
 

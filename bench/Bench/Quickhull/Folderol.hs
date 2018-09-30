@@ -5,6 +5,7 @@ module Bench.Quickhull.Folderol where
 
 import Bench.Plumbing.Folderol
 import Bench.Quickhull.FolderolFilterMax
+import qualified Bench.Quickhull.FolderolFilterMaxGen as Gen
 import Bench.Quickhull.Skeleton
 
 import Folderol
@@ -37,5 +38,11 @@ pivots vec = unsafeDupablePerformIO $ do
 runQuickhull :: Unbox.Vector Int -> IO (Unbox.Vector Point)
 runQuickhull is = do
   let hull = quickhullWithPivots pivots filterMax
+           $ genPoints is
+  hull `seq` return hull
+
+runQuickhullGen :: Unbox.Vector Int -> IO (Unbox.Vector Point)
+runQuickhullGen is = do
+  let hull = quickhullWithPivots pivots Gen.filterMax
            $ genPoints is
   hull `seq` return hull

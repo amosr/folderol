@@ -138,7 +138,7 @@ unwrapInit :: Channel -> Haskell.Exp -> Haskell.Exp
 unwrapInit c body
  = let init = chanName c "init"
        state = chanName c "state"
-       lamb = Haskell.LamE [Haskell.VarP state] body
+       lamb = Haskell.LamE [Haskell.BangP $ Haskell.VarP state] body
        inity = (Haskell.VarE '(>>=) `Haskell.AppE` Haskell.VarE init)  `Haskell.AppE` lamb
    in inity
 
@@ -169,8 +169,9 @@ genInstruction sources sinks (l, info)
       -- Insert wildcard case expressions for every binding to silence -Wunused-binds
       forced <- foldM insertForce body $ Set.toList $ infoBindings info 
       let clause = Haskell.Clause (bindsSpec <> bindsSt <> binds) (Haskell.NormalB forced) []
-      let inline = Haskell.InlineP l' Haskell.Inline Haskell.ConLike Haskell.AllPhases
-      return [Haskell.PragmaD inline, Haskell.FunD l' [clause] ]
+      -- let inline = Haskell.InlineP l' Haskell.Inlinable Haskell.FunLike Haskell.AllPhases
+      -- Haskell.PragmaD inline,
+      return [ Haskell.FunD l' [clause] ]
  where
   l'    = unLabel l
 
@@ -211,7 +212,7 @@ genInstruction sources sinks (l, info)
             let pull0 = Haskell.varE $ chanName c "pull"
             let bnd  = Haskell.varE '(>>=)
 
-            let body0 = Haskell.lamE [return $ Haskell.ConP '(,) [Haskell.VarP i, Haskell.VarP (stateName' c True)]]
+            let body0 = Haskell.lamE [return $ Haskell.ConP '(,) [Haskell.BangP $ Haskell.VarP i, Haskell.BangP $ Haskell.VarP (stateName' c True)]]
                       [|case $(Haskell.varE i) of 
                          Just val -> $(genNextWith c t v 'val)
                          Nothing -> $(genNextUpdateState c f)|]
@@ -226,7 +227,7 @@ genInstruction sources sinks (l, info)
             let push0 = Haskell.varE $ chanName c "push"
             let bnd  = Haskell.varE '(>>=)
 
-            let body0 = Haskell.lamE [return $ Haskell.VarP (stateName' c True)] [|$(genNextUpdateState c n)|]
+            let body0 = Haskell.lamE [return $ Haskell.BangP $ Haskell.VarP (stateName' c True)] [|$(genNextUpdateState c n)|]
 
             bnd `Haskell.appE` ((push0 `Haskell.appE` s0) `Haskell.appE` return e) `Haskell.appE` body0
 
